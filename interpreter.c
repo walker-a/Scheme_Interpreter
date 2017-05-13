@@ -1,10 +1,18 @@
 #include <stdio.h>
+#include <string.h>
 #include "interpreter.h"
 #include "tokenizer.h"
 #include "value.h"
 #include "linkedlist.h"
 #include "talloc.h"
 #include "parser.h"
+
+//super basic error handling, should be expanded later to make it useful
+void handleInterpError() {
+    printf("an error occurred during interpretation\n");
+    tfree();
+    exit(0);
+}
 
 void evalationError() {
     texit(0);
@@ -16,7 +24,7 @@ Value *lookUpSymbol(Value *expr, Frame *frame) {
 }
 
 void interpret(Value *tree) {
-    
+    //this needs to get built
 }
 
 Value *evalIf(Value *expr, Frame *frame) {
@@ -27,18 +35,18 @@ Value *evalIf(Value *expr, Frame *frame) {
         if (cdr(expr)->type == CONS_TYPE) {
             fExpr = car(cdr(cdr(expr)));
         }
-        else () {
-            handleError();
+        else {
+            handleInterpError();
         }
     }
     else {
-        handleError();
+        handleInterpError();
     }
     if (car(expr)->i) {
         return eval(tExpr, frame);
     }
     else {
-        return (fExpr, frame);
+        return eval(fExpr, frame);
     }
 }
 
@@ -47,6 +55,7 @@ Value *evalLet(Value *expr, Frame *frame) {
 }
 
 Value *eval(Value *expr, Frame *frame) {
+    Value *result;
     switch (expr->type) {
      case INT_TYPE: {
         return expr;
@@ -60,20 +69,19 @@ Value *eval(Value *expr, Frame *frame) {
         return expr;
         break;
      }
-     case STRING_TYPE: {
+     case STR_TYPE: {
         return expr;
         break;
      } 
      case SYMBOL_TYPE: {
         return lookUpSymbol(expr, frame);
         break;
-     }  
+     }
      case CONS_TYPE: {
         Value *first = car(expr);
         Value *args = cdr(expr);
 
         // Sanity and error checking on first...
-
         if (!strcmp(first->s, "if")) {
             result = evalIf(args,frame);
         }
@@ -93,5 +101,5 @@ Value *eval(Value *expr, Frame *frame) {
 
 //      ....
     }    
-//    ....
+    return result;
 }

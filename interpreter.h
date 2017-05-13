@@ -1,3 +1,5 @@
+#include "value.h"
+
 #ifndef _INTERPRETER
 #define _INTERPRETER
 
