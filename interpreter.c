@@ -80,7 +80,7 @@ Value *eval(Value *expr, Frame *frame) {
 
         // .. other special forms here...
         
-        if (!strcmp(first->s, "let")) {
+        else if (!strcmp(first->s, "let")) {
             result = evalLet(args,frame);
         }
 
