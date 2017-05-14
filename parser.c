@@ -158,13 +158,13 @@ void displayValue(Value *value) {
 
 // Prints the tree to the screen in a readable fashion. It should look just like
 // Racket code; use parentheses to indicate subtrees.
-void printTree(Value *tree) {
+void printTree2(Value *tree) {
     Value *curToken;
     while (!empty(tree)) {
         curToken = car(tree);
         if (curToken->type == CONS_TYPE) {
             printf("(");
-            printTree(curToken);
+            printTree2(curToken);
             printf(")");
             tree = cdr(tree);
             if (!empty(tree)) {
@@ -178,4 +178,9 @@ void printTree(Value *tree) {
             tree = cdr(tree);
         }
     }
+}
+
+void printTree(Value *tree) {
+    printTree2(tree);
+    printf("\n");
 }

@@ -76,13 +76,20 @@ Value *tokenize() {
         
             // accounts for boolean case
             if (charRead == '#' && canStartNewToken) {
-                newNode->type = BOOL_TYPE;
-
-                addCharToStr(newNode->s, charRead);            
+                newNode->type = BOOL_TYPE;           
                 charRead = fgetc(stdin);
 
-                if (charRead == 't' || charRead == 'f') {
-                    addCharToStr(newNode->s, charRead);
+//                if (charRead == 't' || charRead == 'f') {
+//                    addCharToStr(newNode->s, charRead);
+//                    charRead = fgetc(stdin);
+//                }
+                
+                if (charRead == 't'){
+                    newNode->i = 1;
+                    charRead = fgetc(stdin);
+                }
+                else if (charRead == 'f'){
+                    newNode->i = 0;
                     charRead = fgetc(stdin);
                 }
                 else {
@@ -90,12 +97,15 @@ Value *tokenize() {
                 }
                 
                 // stores t/f values as 0/1 in int i of Value
-                if (newNode->s == "#t") {
-                    newNode->i = 1;
-                }
-                else {
-                    newNode->i = 0;
-                }
+//                if (!strcmp(newNode->s, "#t")) {
+//                    newNode->i = 1;
+//                }
+//                else if (!strcmp(newNode->s, "#f")) {
+//                    newNode->i = 0;
+//                }
+//                else {
+//                    handleError(BOOL_TYPE);
+//                }
 
                 canStartNewToken = 0;
             }

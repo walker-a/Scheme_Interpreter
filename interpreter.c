@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 #include "interpreter.h"
 #include "tokenizer.h"
 #include "value.h"
@@ -19,12 +20,69 @@ void evalationError() {
 }
 
 Value *lookUpSymbol(Value *expr, Frame *frame) {
+    assert(expr->type == SYMBOL_TYPE);
+    assert(frame);
+    while(frame != NULL) {
+        Value *bindings = frame->bindings;
+        while (bindings->type != NULL_TYPE){
+            // might break car assert if frame badly done
+            if (!strcmp(car(car(bindings))->s, expr->s)){
+                expr = car(cdr(bindings));
+                return expr;
+            }
+            bindings = cdr(bindings);
+        }
+        frame = frame->parent;
+    }
+    handleInterpError(); //couldnt find symbol
+    return NULL;
+}
 
-    return expr;
+void printVal(Value *val){
+    switch (val->type) {
+     case INT_TYPE: {
+        printf("%i", val->i);
+        break;
+     }
+     case DOUBLE_TYPE: {
+        printf("%f", val->d);
+        break;
+     }
+     case BOOL_TYPE: {
+        if (val->i == 1){
+            printf("#t");
+        }
+        else {
+            printf("#f");
+        }
+        break;
+     }
+     case STR_TYPE: {
+        printf("%s", val->s);
+        break;
+     } 
+     case SYMBOL_TYPE: {
+        printf("symbol?");
+        break;
+     }
+     case CONS_TYPE: {
+        //not totally sure what to do here
+        break;
+     }
+    }
 }
 
 void interpret(Value *tree) {
-    //this needs to get built
+    Frame *newFrame = talloc(sizeof(Frame));
+    newFrame->bindings = makeNull();
+    newFrame->parent = NULL;
+    //printf("hello\n");
+    //fflush(stdout);
+    while (tree->type != NULL_TYPE){
+        printVal(eval(car(tree), newFrame));
+        printf("\n");
+        tree = cdr(tree);
+    }
 }
 
 Value *evalIf(Value *expr, Frame *frame) {
@@ -42,7 +100,9 @@ Value *evalIf(Value *expr, Frame *frame) {
     else {
         handleInterpError();
     }
-    if (car(expr)->i) {
+    Value *check = eval(car(expr), frame);
+    assert(check->type == BOOL_TYPE);
+    if (check->i) {
         return eval(tExpr, frame);
     }
     else {
@@ -50,8 +110,37 @@ Value *evalIf(Value *expr, Frame *frame) {
     }
 }
 
+Value *makeBind(Value *symbol, Value *result){
+    Value *cell1 = cons(symbol, result);
+    Value *cell2 = talloc(sizeof(Value));
+    cell2->type = CONS_TYPE;
+    cell2->c.car = cell1;
+    return cell2;
+}
+
 Value *evalLet(Value *expr, Frame *frame) {
-    return expr;
+    if (expr || car(expr) || cdr(cdr(expr))->type != NULL_TYPE){
+        handleInterpError();
+    }
+    
+    Frame *newFrame = talloc(sizeof(Frame));
+    newFrame->bindings = makeNull();
+    newFrame->parent = frame;
+    
+    Value *list = car(expr);
+    while (list->type != NULL_TYPE){
+        Value *assign = car(list);
+        if (cdr(cdr(assign))->type == NULL_TYPE){
+            handleInterpError();
+        }
+        Value *symbol = car(assign);
+        Value *result = car(cdr(assign));
+        Value *newBind = makeBind(symbol, result);
+        newBind->c.cdr = newFrame->bindings;
+        newFrame->bindings = newBind;
+        list = cdr(list);
+    }
+    return eval(cdr(expr), newFrame);
 }
 
 Value *eval(Value *expr, Frame *frame) {
