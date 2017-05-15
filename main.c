@@ -12,7 +12,6 @@ int main() {
     Value *tree = parse(list);
     printTree(tree);
     interpret(tree);
-
     tfree();
     return 0;
 }

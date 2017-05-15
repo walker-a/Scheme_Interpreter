@@ -11,23 +11,38 @@
 //super basic error handling, should be expanded later to make it useful
 void handleInterpError() {
     printf("an error occurred during interpretation\n");
-    tfree();
-    exit(0);
+    texit(0);
 }
 
-void evalationError() {
-    texit(0);
+Frame *makeFirstFrame() {
+    Frame *newFrame = talloc(sizeof(Frame));
+    newFrame->bindings = makeNull();
+    return newFrame;
+}
+
+Frame *makeNewFrame(Frame *parent) {
+    Frame *newFrame = talloc(sizeof(Frame));
+    newFrame->bindings = makeNull();
+    newFrame->parent = parent;
+    return newFrame;
+}
+
+Value *addBinding(Value *symbol, Value *result, Value *binding) {
+    Value *cell1 = cons(symbol, result);
+    Value *cell2 = cons(cell1, binding);
+    return cell2;
 }
 
 Value *lookUpSymbol(Value *expr, Frame *frame) {
     assert(expr->type == SYMBOL_TYPE);
     assert(frame);
+    Value *bindings;
     while(frame != NULL) {
-        Value *bindings = frame->bindings;
-        while (bindings->type != NULL_TYPE){
+        bindings = frame->bindings;
+        while (bindings->type != NULL_TYPE) {
             // might break car assert if frame badly done
-            if (!strcmp(car(car(bindings))->s, expr->s)){
-                expr = car(cdr(bindings));
+            if (!strcmp(car(car(bindings))->s, expr->s)) {
+                expr = cdr(car(bindings));
                 return expr;
             }
             bindings = cdr(bindings);
@@ -38,7 +53,7 @@ Value *lookUpSymbol(Value *expr, Frame *frame) {
     return NULL;
 }
 
-void printVal(Value *val){
+void printVal(Value *val) {
     switch (val->type) {
      case INT_TYPE: {
         printf("%i", val->i);
@@ -73,12 +88,8 @@ void printVal(Value *val){
 }
 
 void interpret(Value *tree) {
-    Frame *newFrame = talloc(sizeof(Frame));
-    newFrame->bindings = makeNull();
-    newFrame->parent = NULL;
-    //printf("hello\n");
-    //fflush(stdout);
-    while (tree->type != NULL_TYPE){
+    Frame *newFrame = makeFirstFrame();
+    while (tree->type != NULL_TYPE) {
         printVal(eval(car(tree), newFrame));
         printf("\n");
         tree = cdr(tree);
@@ -110,37 +121,41 @@ Value *evalIf(Value *expr, Frame *frame) {
     }
 }
 
-Value *makeBind(Value *symbol, Value *result){
-    Value *cell1 = cons(symbol, result);
-    Value *cell2 = talloc(sizeof(Value));
-    cell2->type = CONS_TYPE;
-    cell2->c.car = cell1;
-    return cell2;
-}
-
 Value *evalLet(Value *expr, Frame *frame) {
-    if (expr || car(expr) || cdr(cdr(expr))->type != NULL_TYPE){
+    if (expr == NULL || car(expr)->type != CONS_TYPE || cdr(cdr(expr))->type != NULL_TYPE) {
         handleInterpError();
     }
     
-    Frame *newFrame = talloc(sizeof(Frame));
-    newFrame->bindings = makeNull();
-    newFrame->parent = frame;
+    Frame *newFrame = makeNewFrame(frame);
     
-    Value *list = car(expr);
-    while (list->type != NULL_TYPE){
-        Value *assign = car(list);
-        if (cdr(cdr(assign))->type == NULL_TYPE){
+    Value *assignList = car(expr);
+    while (assignList->type != NULL_TYPE) {
+        if (assignList->type != CONS_TYPE) { //error checking for assignList
             handleInterpError();
         }
+        Value *assign = car(assignList); 
+        
+        //error checking for assign
+        if (assign->type != CONS_TYPE) {
+            handleInterpError();
+        }
+        else if (cdr(assign)->type != CONS_TYPE) {
+            handleInterpError();
+        }
+        else if (cdr(cdr(assign))->type != NULL_TYPE) {
+            handleInterpError();
+        }
+        else if (car(assign)->type != SYMBOL_TYPE) {
+            handleInterpError();
+        }
+        
         Value *symbol = car(assign);
         Value *result = car(cdr(assign));
-        Value *newBind = makeBind(symbol, result);
-        newBind->c.cdr = newFrame->bindings;
-        newFrame->bindings = newBind;
-        list = cdr(list);
+        newFrame->bindings = addBinding(symbol, result, newFrame->bindings);
+        assignList = cdr(assignList);
     }
-    return eval(cdr(expr), newFrame);
+
+    return eval(car(cdr(expr)), newFrame);
 }
 
 Value *eval(Value *expr, Frame *frame) {
@@ -172,18 +187,18 @@ Value *eval(Value *expr, Frame *frame) {
 
         // Sanity and error checking on first...
         if (!strcmp(first->s, "if")) {
-            result = evalIf(args,frame);
+            result = evalIf(args, frame);
         }
 
         // .. other special forms here...
         
         else if (!strcmp(first->s, "let")) {
-            result = evalLet(args,frame);
+            result = evalLet(args, frame);
         }
 
         else {
            // not a recognized special form
-           evalationError();
+           handleInterpError();
         }
         break;
      }
