@@ -89,6 +89,10 @@ void printVal(Value *val) {
         printf("%s", val->s);
         break;
      }
+     case SYMBOL_TYPE: {
+        printf("%s", val->s);
+        break;
+     }
      case CONS_TYPE: {
         printf("(");
         int firstItem = 1;
@@ -107,7 +111,6 @@ void printVal(Value *val) {
         break;
      }
      case NULL_TYPE: {
-        printf("()");
         break;
      }
      default: {
@@ -208,10 +211,11 @@ Value *evalLet(Value *expr, Frame *frame) {
 
 // evaluates a quote expression in scheme code
 Value *evalQuote(Value *expr, Frame *frame) {
-//    if (args->car == NULL || args->cdr == NULL) {
-//        
-//    }
-    return expr;
+    if (expr->type != CONS_TYPE || car(expr) == NULL || cdr(expr) == NULL
+        || cdr(expr)->type != NULL_TYPE) {
+        handleInterpError();
+    }
+    return car(expr);
 }
 
 // evaluates an expression in scheme code
@@ -243,7 +247,7 @@ Value *eval(Value *expr, Frame *frame) {
         Value *args = cdr(expr);
 
         if (first->type == NULL_TYPE) {
-            result = first;
+            result = expr;
         }
         
         // Sanity and error checking on first...
