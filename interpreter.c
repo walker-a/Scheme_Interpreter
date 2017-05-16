@@ -1,3 +1,6 @@
+// by shiny-morning (Adam Klein, Kerim Celik, and Alex Walker)
+// for Programming Languages; 05/15/2017
+
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -8,9 +11,9 @@
 #include "talloc.h"
 #include "parser.h"
 
-//super basic error handling, should be expanded later to make it useful
+// Prints error message and exits
 void handleInterpError() {
-    printf("an error occurred during interpretation\n");
+    printf("An error occurred during interpretation.\n");
     texit(0);
 }
 
@@ -80,9 +83,9 @@ void printVal(Value *val) {
         printf("symbol?");
         break;
      }
-     case CONS_TYPE: {
-        //not totally sure what to do here
-        break;
+     default: {
+        //otherwise throw an error
+        handleInterpError();
      }
     }
 }
@@ -128,7 +131,11 @@ Value *evalIf(Value *expr, Frame *frame) {
 }
 
 Value *evalLet(Value *expr, Frame *frame) {
-    if (expr == NULL || car(expr)->type != CONS_TYPE || cdr(cdr(expr))->type != NULL_TYPE) {
+//    if (expr == NULL) {
+//        handleInterpError();
+//    }
+    if (expr == NULL || expr->type != CONS_TYPE ||
+        car(expr)->type != CONS_TYPE || cdr(cdr(expr))->type != NULL_TYPE) {
         handleInterpError();
     }
     
@@ -164,7 +171,7 @@ Value *evalLet(Value *expr, Frame *frame) {
                 handleInterpError();
             }
         }
-        Value *result = car(cdr(assign));
+        Value *result = eval(car(cdr(assign)), newFrame);
         newFrame->bindings = addBinding(symbol, result, newFrame->bindings);
         assignList = cdr(assignList);
     }
@@ -216,8 +223,10 @@ Value *eval(Value *expr, Frame *frame) {
         }
         break;
      }
-
-//      ....
+     default: {
+        //otherwise throw an error
+        handleInterpError();
+     }    
     }    
     return result;
 }
