@@ -39,7 +39,6 @@ int empty(Value *stack) {
 // stack function, pushes a token onto the stack, returns stack
 Value *push(Value *stack, Value *token) {
     if (token -> type == NULL_TYPE) {
-        handleParseError(0);
         return stack;
     }
     else {
