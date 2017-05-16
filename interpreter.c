@@ -17,12 +17,16 @@ void handleInterpError() {
     texit(0);
 }
 
+// creates the starting frame in the interpret function and initializes
+// parent to null
+// only meant to be used once
 Frame *makeFirstFrame() {
     Frame *newFrame = talloc(sizeof(Frame));
     newFrame->bindings = makeNull();
     return newFrame;
 }
 
+// creates a new frame, with its parent as a parameter
 Frame *makeNewFrame(Frame *parent) {
     Frame *newFrame = talloc(sizeof(Frame));
     newFrame->bindings = makeNull();
@@ -30,12 +34,17 @@ Frame *makeNewFrame(Frame *parent) {
     return newFrame;
 }
 
-Value *addBinding(Value *symbol, Value *result, Value *binding) {
+// adds a binding consisting of a symbol and result to the current
+// list of bindings, which is the parameter 'binding'
+// returns the new list of bindings
+Value *addBinding(Value *symbol, Value *result, Value *bindingList) {
     Value *cell1 = cons(symbol, result);
-    Value *cell2 = cons(cell1, binding);
+    Value *cell2 = cons(cell1, bindingList);
     return cell2;
 }
 
+// looks up a symbol in the frame bindings and returns the value
+// associated with that symbol
 Value *lookUpSymbol(Value *expr, Frame *frame) {
     assert(expr->type == SYMBOL_TYPE);
     assert(frame);
@@ -43,7 +52,6 @@ Value *lookUpSymbol(Value *expr, Frame *frame) {
     while(frame != NULL) {
         bindings = frame->bindings;
         while (bindings->type != NULL_TYPE) {
-            // might break car assert if frame badly done
             if (!strcmp(car(car(bindings))->s, expr->s)) {
                 expr = cdr(car(bindings));
                 return expr;
@@ -56,6 +64,8 @@ Value *lookUpSymbol(Value *expr, Frame *frame) {
     return NULL;
 }
 
+// prints a value, provided that it is an int, double, boolean, string,
+// or symbol
 void printVal(Value *val) {
     switch (val->type) {
      case INT_TYPE: {
@@ -79,10 +89,6 @@ void printVal(Value *val) {
         printf("%s", val->s);
         break;
      } 
-     case SYMBOL_TYPE: {
-        printf("symbol?");
-        break;
-     }
      default: {
         //otherwise throw an error
         handleInterpError();
@@ -90,6 +96,7 @@ void printVal(Value *val) {
     }
 }
 
+// interprets scheme tree as code
 void interpret(Value *tree) {
     Frame *newFrame = makeFirstFrame();
     while (tree->type != NULL_TYPE) {
@@ -99,6 +106,7 @@ void interpret(Value *tree) {
     }
 }
 
+// evaluates an if statement based on the arguments 'expr'
 Value *evalIf(Value *expr, Frame *frame) {
     Value *tExpr;
     Value *fExpr;
@@ -108,7 +116,7 @@ Value *evalIf(Value *expr, Frame *frame) {
     if (cdr(expr)->type == CONS_TYPE) {
         tExpr = car(cdr(expr));
         if (cdr(cdr(expr))->type == CONS_TYPE) {
-            if(cdr(cdr(cdr(expr)))->type != NULL_TYPE){
+            if(cdr(cdr(cdr(expr)))->type != NULL_TYPE) {
                 handleInterpError();
             }
             fExpr = car(cdr(cdr(expr)));
@@ -121,7 +129,6 @@ Value *evalIf(Value *expr, Frame *frame) {
         handleInterpError();
     }
     Value *check = eval(car(expr), frame);
-    assert(check->type == BOOL_TYPE);
     if (check->i) {
         return eval(tExpr, frame);
     }
@@ -130,6 +137,7 @@ Value *evalIf(Value *expr, Frame *frame) {
     }
 }
 
+// evaluates a let expression in scheme code
 Value *evalLet(Value *expr, Frame *frame) {
 //    if (expr == NULL) {
 //        handleInterpError();
@@ -179,6 +187,7 @@ Value *evalLet(Value *expr, Frame *frame) {
     return eval(car(cdr(expr)), newFrame);
 }
 
+// evaluates an expression in scheme code
 Value *eval(Value *expr, Frame *frame) {
     Value *result;
     switch (expr->type) {
