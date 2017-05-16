@@ -1,1 +1,4 @@
 (let ((x 2) (y 3)) y)
+(if #t 3 8.6)
+(if #f -0.99 3)
+(let ((x #t)) (if x 3 "i am a string"))

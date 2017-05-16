@@ -99,9 +99,15 @@ void interpret(Value *tree) {
 Value *evalIf(Value *expr, Frame *frame) {
     Value *tExpr;
     Value *fExpr;
+    if (expr->type != CONS_TYPE) {
+        handleInterpError();
+    }
     if (cdr(expr)->type == CONS_TYPE) {
         tExpr = car(cdr(expr));
-        if (cdr(expr)->type == CONS_TYPE) {
+        if (cdr(cdr(expr))->type == CONS_TYPE) {
+            if(cdr(cdr(cdr(expr)))->type != NULL_TYPE){
+                handleInterpError();
+            }
             fExpr = car(cdr(cdr(expr)));
         }
         else {
