@@ -88,7 +88,24 @@ void printVal(Value *val) {
      case STR_TYPE: {
         printf("%s", val->s);
         break;
-     } 
+     }
+     case CONS_TYPE: {
+        printf("(");
+        int firstItem = 1;
+        while (val->type != NULL_TYPE) {
+            //adds a space before all but the first item
+            if (firstItem == 0) {
+                printf(" ");
+            }
+            else {
+                firstItem = 0;
+            }
+            printVal(car(val));
+            val = cdr(val);
+        }
+        printf(")");
+        break;
+    }
      default: {
         //otherwise throw an error
         handleInterpError();
