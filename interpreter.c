@@ -150,9 +150,6 @@ Value *evalLet(Value *expr, Frame *frame) {
         }
         
         Value *symbol = car(assign);
-        if (car(cdr(assign))->type == CONS_TYPE) {
-            handleInterpError();
-        }
         Value *result = car(cdr(assign));
         newFrame->bindings = addBinding(symbol, result, newFrame->bindings);
         assignList = cdr(assignList);
