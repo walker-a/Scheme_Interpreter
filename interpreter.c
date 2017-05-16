@@ -11,7 +11,7 @@
 #include "talloc.h"
 #include "parser.h"
 
-// Prints error message and exits
+// prints error message and exits
 void handleInterpError() {
     printf("An error occurred during interpretation.\n");
     texit(0);
@@ -139,9 +139,6 @@ Value *evalIf(Value *expr, Frame *frame) {
 
 // evaluates a let expression in scheme code
 Value *evalLet(Value *expr, Frame *frame) {
-//    if (expr == NULL) {
-//        handleInterpError();
-//    }
     if (expr == NULL || expr->type != CONS_TYPE ||
         car(expr)->type != CONS_TYPE || cdr(cdr(expr))->type != NULL_TYPE) {
         handleInterpError();
@@ -151,12 +148,13 @@ Value *evalLet(Value *expr, Frame *frame) {
     
     Value *assignList = car(expr);
     while (assignList->type != NULL_TYPE) {
-        if (assignList->type != CONS_TYPE) { //error checking for assignList
+        // error checking for assignList
+        if (assignList->type != CONS_TYPE) {
             handleInterpError();
         }
         Value *assign = car(assignList); 
         
-        //error checking for assign
+        // error checking for assign
         if (assign->type != CONS_TYPE) {
             handleInterpError();
         }
@@ -219,8 +217,6 @@ Value *eval(Value *expr, Frame *frame) {
         if (!strcmp(first->s, "if")) {
             result = evalIf(args, frame);
         }
-
-        // .. other special forms here...
         
         else if (!strcmp(first->s, "let")) {
             result = evalLet(args, frame);
@@ -233,7 +229,7 @@ Value *eval(Value *expr, Frame *frame) {
         break;
      }
      default: {
-        //otherwise throw an error
+        // otherwise throw an error
         handleInterpError();
      }    
     }    
