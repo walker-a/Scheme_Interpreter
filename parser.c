@@ -99,6 +99,9 @@ Value *parse(Value *tokens) {
                 newParseTree = push(newParseTree, poppedToken);
                 poppedToken = pop(stack);
             }
+            if (empty(newParseTree)) {
+                newParseTree = cons(makeNull(), newParseTree);
+            }
             stack = push(stack, newParseTree);
         }
         else {
@@ -149,6 +152,9 @@ void displayValue(Value *value) {
     }
     else if (value->type == SYMBOL_TYPE) {
         printf("%s", value->s);
+    }
+    else if (value->type == NULL_TYPE) {
+        
     }
     else {
         handleParseError(0);

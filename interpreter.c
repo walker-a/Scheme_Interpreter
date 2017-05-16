@@ -88,7 +88,28 @@ void printVal(Value *val) {
      case STR_TYPE: {
         printf("%s", val->s);
         break;
-     } 
+     }
+     case CONS_TYPE: {
+        printf("(");
+        int firstItem = 1;
+        while (val->type != NULL_TYPE) {
+            //adds a space before all but the first item
+            if (firstItem == 0) {
+                printf(" ");
+            }
+            else {
+                firstItem = 0;
+            }
+            printVal(car(val));
+            val = cdr(val);
+        }
+        printf(")");
+        break;
+     }
+     case NULL_TYPE: {
+        printf("()");
+        break;
+     }
      default: {
         //otherwise throw an error
         handleInterpError();
@@ -185,6 +206,14 @@ Value *evalLet(Value *expr, Frame *frame) {
     return eval(car(cdr(expr)), newFrame);
 }
 
+// evaluates a quote expression in scheme code
+Value *evalQuote(Value *expr, Frame *frame) {
+//    if (args->car == NULL || args->cdr == NULL) {
+//        
+//    }
+    return expr;
+}
+
 // evaluates an expression in scheme code
 Value *eval(Value *expr, Frame *frame) {
     Value *result;
@@ -213,13 +242,21 @@ Value *eval(Value *expr, Frame *frame) {
         Value *first = car(expr);
         Value *args = cdr(expr);
 
+        if (first->type == NULL_TYPE) {
+            result = first;
+        }
+        
         // Sanity and error checking on first...
-        if (!strcmp(first->s, "if")) {
+        else if (!strcmp(first->s, "if")) {
             result = evalIf(args, frame);
         }
         
         else if (!strcmp(first->s, "let")) {
             result = evalLet(args, frame);
+        }
+        
+        else if (!strcmp(first->s, "quote")) {
+            result = evalQuote(args, frame);
         }
 
         else {
