@@ -1,0 +1,7 @@
+(quote 1)
+(quote a)
+(quote #t)
+(quote (a b c))
+(quote "string")
+(quote (1 b #f))
+(quote ())
