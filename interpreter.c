@@ -145,20 +145,22 @@ void printVal(Value *val) {
     }
 }
 
-Value *apply(Value *function, Value *args){
+Value *apply(Value *function, Value *args) {
     if (!(function) || function->type != CLOSURE_TYPE) {
         handleInterpError();
     }
     Frame *newFrame = makeNewFrame(function->cl.frame);
     Value *curr = function->cl.paramNames;
-    Value *curr2 = args;
-    while (curr->type != NULL_TYPE && curr2->type != NULL_TYPE) {
-        newFrame->bindings = addBinding(car(curr), car(curr2), newFrame->bindings);
-        curr = cdr(curr); 
-        curr2 = cdr(curr2);
-    }
-    if (curr->type != NULL_TYPE || curr2->type != NULL_TYPE) {
-        handleInterpError();
+    if (car(curr)->type != NULL_TYPE) {
+        Value *curr2 = args;
+        while (curr->type != NULL_TYPE && curr2->type != NULL_TYPE) {
+            newFrame->bindings = addBinding(car(curr), car(curr2), newFrame->bindings);
+            curr = cdr(curr); 
+            curr2 = cdr(curr2);
+        }
+        if (curr->type != NULL_TYPE || curr2->type != NULL_TYPE) {
+            handleInterpError();
+        }
     }
     return eval(function->cl.functionCode, newFrame);
 }
@@ -286,8 +288,11 @@ Value *evalLambda(Value *expr, Frame *frame) {
         handleInterpError();
     }
     Value *current = car(expr);
+    if (current->type == CONS_TYPE && car(current)->type == NULL_TYPE) {
+        current = cdr(current);
+    }
     while (current->type != NULL_TYPE) {
-        if (car(current)->type != SYMBOL_TYPE){
+        if (car(current)->type != SYMBOL_TYPE) {
             handleInterpError();
         }
         current = cdr(current);
@@ -297,7 +302,10 @@ Value *evalLambda(Value *expr, Frame *frame) {
 }
 
 Value *evalEach(Value *expr, Frame *frame) {
-    if (expr->type != CONS_TYPE){
+    if (expr->type == NULL_TYPE) {
+        return expr;
+    }
+    if (expr->type != CONS_TYPE) {
         handleInterpError();
     }
     Value *args = makeNull();
