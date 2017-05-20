@@ -17,6 +17,24 @@ void handleInterpError() {
     texit(0);
 }
 
+Value *makeVoid() {
+    Value *value = makeNull();
+    value->type = VOID_TYPE;
+    return value;
+}
+
+Value *makeClosure(Value *params, Value *fxnCode, Frame *fram){
+    Value *value = makeNull();
+    value->type = CLOSURE_TYPE;
+    if (!(params) || !(fxnCode) || !(fram)){
+        handleInterpError();
+    }
+    value->cl.paramNames = params;
+    value->cl.functionCode = fxnCode;
+    value->cl.frame = fram;
+    return value;
+}
+
 // creates the starting frame in the interpret function and initializes
 // parent to null
 // only meant to be used once
@@ -68,6 +86,13 @@ Value *lookUpSymbol(Value *expr, Frame *frame) {
 // or symbol
 void printVal(Value *val) {
     switch (val->type) {
+     case VOID_TYPE: {
+        break;
+     }
+     case CLOSURE_TYPE: {
+        printf("#<procedure>");
+        break;
+    }
      case INT_TYPE: {
         printf("%i", val->i);
         break;
@@ -120,12 +145,33 @@ void printVal(Value *val) {
     }
 }
 
+Value *apply(Value *function, Value *args){
+    if (!(function) || function->type != CLOSURE_TYPE) {
+        handleInterpError();
+    }
+    Frame *newFrame = makeNewFrame(function->cl.frame);
+    Value *curr = function->cl.paramNames;
+    Value *curr2 = args;
+    while (curr->type != NULL_TYPE && curr2->type != NULL_TYPE) {
+        newFrame->bindings = addBinding(car(curr), car(curr2), newFrame->bindings);
+        curr = cdr(curr); 
+        curr2 = cdr(curr2);
+    }
+    if (curr->type != NULL_TYPE || curr2->type != NULL_TYPE) {
+        handleInterpError();
+    }
+    return eval(function->cl.functionCode, newFrame);
+}
+
 // interprets scheme tree as code
 void interpret(Value *tree) {
     Frame *newFrame = makeFirstFrame();
     while (tree->type != NULL_TYPE) {
-        printVal(eval(car(tree), newFrame));
-        printf("\n");
+        Value *val = eval(car(tree), newFrame);
+        printVal(val);
+        if (val->type != VOID_TYPE) {
+            printf("\n");
+        }
         tree = cdr(tree);
     }
 }
@@ -218,6 +264,52 @@ Value *evalQuote(Value *expr, Frame *frame) {
     return car(expr);
 }
 
+Value *evalDefine(Value *expr, Frame *frame) {
+    if (length(expr) != 2) {
+        handleInterpError();
+    }
+    if (car(expr) == NULL || car(cdr(expr)) == NULL) {
+        handleInterpError();
+    }
+    if (car(expr)->type != SYMBOL_TYPE) {
+        handleInterpError();
+    }
+    
+    Value *result = eval(car(cdr(expr)), frame);
+    
+    frame->bindings = addBinding(car(expr), result, frame->bindings);
+    return makeVoid();
+}
+
+Value *evalLambda(Value *expr, Frame *frame) {
+    if (length(expr) != 2) {
+        handleInterpError();
+    }
+    Value *current = car(expr);
+    while (current->type != NULL_TYPE) {
+        if (car(current)->type != SYMBOL_TYPE){
+            handleInterpError();
+        }
+        current = cdr(current);
+    }
+    Value *closure = makeClosure(car(expr), car(cdr(expr)), frame);
+    return closure;
+}
+
+Value *evalEach(Value *expr, Frame *frame) {
+    if (expr->type != CONS_TYPE){
+        handleInterpError();
+    }
+    Value *args = makeNull();
+    Value *cur = expr;
+    while (cur->type != NULL_TYPE){
+        args = cons(eval(car(cur), frame), args);
+        cur = cdr(cur);
+    }
+    
+    return reverse(args);
+}
+
 // evaluates an expression in scheme code
 Value *eval(Value *expr, Frame *frame) {
     Value *result;
@@ -262,10 +354,20 @@ Value *eval(Value *expr, Frame *frame) {
         else if (!strcmp(first->s, "quote")) {
             result = evalQuote(args, frame);
         }
+        
+        else if (!strcmp(first->s, "define")) {
+            result = evalDefine(args, frame);
+        }
+        
+        else if (!strcmp(first->s, "lambda")) {
+            result = evalLambda(args, frame);
+        }
 
         else {
-           // not a recognized special form
-           handleInterpError();
+            // not a recognized special form
+            Value *evaledOperator = eval(first, frame);
+            Value *evaledArgs = evalEach(args, frame);
+            return apply(evaledOperator,evaledArgs);
         }
         break;
      }
@@ -273,6 +375,6 @@ Value *eval(Value *expr, Frame *frame) {
         // otherwise throw an error
         handleInterpError();
      }    
-    }    
+    }
     return result;
 }
