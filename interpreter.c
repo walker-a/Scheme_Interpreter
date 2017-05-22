@@ -209,6 +209,17 @@ Value *evalIf(Value *expr, Frame *frame) {
     }
 }
 
+int inFrame(Value *symbol, Frame *frame) {
+    Value *temp = frame->bindings;
+    while (temp->type == CONS_TYPE) {
+        if (!strcmp(car(car(temp))->s, symbol->s)) {
+            return 1;
+        }
+        temp = cdr(temp);
+    }
+    return 0;
+}
+
 // evaluates a let expression in scheme code
 Value *evalLet(Value *expr, Frame *frame) {
     if (expr == NULL || expr->type != CONS_TYPE ||
@@ -241,15 +252,11 @@ Value *evalLet(Value *expr, Frame *frame) {
         }
         
         Value *symbol = car(assign);
-        if (car(cdr(assign))->type == CONS_TYPE) {
-            if (car(car(cdr(assign))) == NULL) {
-                handleInterpError();
-            }
-            else if (car(car(cdr(assign)))->type != SYMBOL_TYPE) {
-                handleInterpError();
-            }
+        if (inFrame(symbol, newFrame)) {
+            handleInterpError();
         }
-        Value *result = eval(car(cdr(assign)), newFrame);
+
+        Value *result = eval(car(cdr(assign)), frame);
         newFrame->bindings = addBinding(symbol, result, newFrame->bindings);
         assignList = cdr(assignList);
     }
@@ -349,6 +356,10 @@ Value *eval(Value *expr, Frame *frame) {
         if (first->type == NULL_TYPE) {
             result = expr;
         }
+         
+        else if (first->type != SYMBOL_TYPE) {
+            handleInterpError();
+        }
         
         // Sanity and error checking on first...
         else if (!strcmp(first->s, "if")) {
@@ -375,7 +386,7 @@ Value *eval(Value *expr, Frame *frame) {
             // not a recognized special form
             Value *evaledOperator = eval(first, frame);
             Value *evaledArgs = evalEach(args, frame);
-            return apply(evaledOperator,evaledArgs);
+            return apply(evaledOperator, evaledArgs);
         }
         break;
      }

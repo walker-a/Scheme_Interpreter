@@ -1,8 +1,18 @@
-(quote 1)
-(quote -4.39)
-(quote a)
-(quote #t)
-(quote (a b c))
-(quote "string")
-(quote (1 b #f))
-(quote ())
+(define not
+  (lambda (bool)
+    (if bool #f #t)))
+    
+(define testit
+  (lambda (cond conseq alt)
+    (let ((nconseq (not conseq)) (nalt (not alt)))
+      (if cond nconseq nalt))))
+    
+(testit #t #f #t)
+(testit #f #f #t)
+
+(let ((x 3)) (let ((x 4)) x))
+(let ((a ())) a)
+;(1 2 3) ;should break
+;(let ((a (1 2 3))) a) ;should break
+;(let ((x 3) (b x)) x) ;should break
+(let ((x 3) (x 4)) x) ;should break
