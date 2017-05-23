@@ -158,10 +158,14 @@ Value *apply(Value *function, Value *args) {
             curr = cdr(curr); 
             curr2 = cdr(curr2);
         }
-        if (curr->type != NULL_TYPE || curr2->type != NULL_TYPE) {
+        if (length(curr) != length(curr2)) {
             handleInterpError();
         }
     }
+    else if (length(args) != 0) {
+        handleInterpError();
+    }
+
     return eval(function->cl.functionCode, newFrame);
 }
 
@@ -357,7 +361,7 @@ Value *eval(Value *expr, Frame *frame) {
             result = expr;
         }
          
-        else if (first->type != SYMBOL_TYPE) {
+        else if (first->type != SYMBOL_TYPE && first->type != CONS_TYPE) {
             handleInterpError();
         }
         
