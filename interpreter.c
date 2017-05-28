@@ -211,12 +211,12 @@ Value *primitiveAdd(Value *args){
 }
 
 Value *primitiveNull(Value *args) {
-    if (!args) {
+    if (!args || !(args->type == CONS_TYPE) || !(cdr(args)->type == NULL_TYPE)) {
         handleInterpError();
     }
     Value *ret = talloc(sizeof(Value));
     ret->type = BOOL_TYPE;
-    if (args->type == NULL_TYPE) {
+    if (car(args)->type == NULL_TYPE) {
         ret->i = 1;
     }
     else {
