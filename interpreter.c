@@ -169,9 +169,69 @@ Value *apply(Value *function, Value *args) {
     return eval(function->cl.functionCode, newFrame);
 }
 
+void bindPrim(char *name, Value *(*function)(struct Value *), Frame *frame) {
+    Value *value = talloc(sizeof(Value));
+    value->type = PRIMITIVE_TYPE;
+    value->pf = function;
+    cell1 = cons(name, value);
+    cell2 = cons(cell1, frame->bindings);
+    frame->bindings = cell2;
+}
+
+//first draft of add
+Value *primitiveAdd(Value *args){
+    if (!(args) || args->type != CONS_TYPE) {
+        if (args->type == NULL_TYPE) {
+            args->type == INT_TYPE;
+            args->i = 0;
+            return args;
+        }
+        else {
+            handleInterpError();
+        }
+    }
+    else {
+        Value *current = args;
+        Value *sum = makeNull();
+        sum->type = DOUBLE_TYPE;
+        sum->d = 0.0;
+        while (current->type != NULL_TYPE) {
+            if (current->type != CONS_TYPE) {
+                handleInterpError();
+            }
+            if (car(current)->type == INT_TYPE || car(current)->type == DOUBLE_TYPE) {
+                sum->d += car(current);
+            }
+            else {
+                handleInterpError();
+            }
+        }
+        return sum;
+    }
+}
+
+Value *primitiveNull(Value *args) {
+    if (!args) {
+        handleInterpError();
+    }
+    Value *ret = talloc(sizeof(Value));
+    ret->type = BOOL_TYPE;
+    if (args->type == NULL_TYPE) {
+        ret->i = 1;
+    }
+    else {
+        ret->i = 0;
+    }
+    return ret;
+}
+
+
 // interprets scheme tree as code
 void interpret(Value *tree) {
     Frame *newFrame = makeFirstFrame();
+    bindPrim("+", primitiveAdd, newFrame);
+    bindPrim("null?", primitiveNull, newFrame);
+    
     while (tree->type != NULL_TYPE) {
         Value *val = eval(car(tree), newFrame);
         printVal(val);
