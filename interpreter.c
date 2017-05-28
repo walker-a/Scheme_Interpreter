@@ -71,8 +71,14 @@ Value *lookUpSymbol(Value *expr, Frame *frame) {
         bindings = frame->bindings;
         while (bindings->type != NULL_TYPE) {
             if (!strcmp(car(car(bindings))->s, expr->s)) {
-                expr = cdr(car(bindings));
-                return expr;
+                if (car(cdr(bindings))->type == PRIMITIVE_TYPE) {
+                    expr = (car(cdr(bindings))->pf)(cdr(car(bindings)));
+                    return expr;
+                }
+                else {
+                    expr = cdr(car(bindings));
+                    return expr;
+                }
             }
             bindings = cdr(bindings);
         }
@@ -173,8 +179,11 @@ void bindPrim(char *name, Value *(*function)(struct Value *), Frame *frame) {
     Value *value = talloc(sizeof(Value));
     value->type = PRIMITIVE_TYPE;
     value->pf = function;
-    cell1 = cons(name, value);
-    cell2 = cons(cell1, frame->bindings);
+    Value *symbol = talloc(sizeof(Value));
+    symbol->type = STR_TYPE;
+    symbol->s = name;
+    Value *cell1 = cons(symbol, value);
+    Value *cell2 = cons(cell1, frame->bindings);
     frame->bindings = cell2;
 }
 
@@ -182,7 +191,7 @@ void bindPrim(char *name, Value *(*function)(struct Value *), Frame *frame) {
 Value *primitiveAdd(Value *args){
     if (!(args) || args->type != CONS_TYPE) {
         if (args->type == NULL_TYPE) {
-            args->type == INT_TYPE;
+            args->type = INT_TYPE;
             args->i = 0;
             return args;
         }
@@ -191,7 +200,7 @@ Value *primitiveAdd(Value *args){
         }
     }
     else {
-        Value *current = args;
+        Value *current = car(args);
         Value *sum = makeNull();
         sum->type = DOUBLE_TYPE;
         sum->d = 0.0;
@@ -199,8 +208,11 @@ Value *primitiveAdd(Value *args){
             if (current->type != CONS_TYPE) {
                 handleInterpError();
             }
-            if (car(current)->type == INT_TYPE || car(current)->type == DOUBLE_TYPE) {
-                sum->d += car(current);
+            if (car(current)->type == INT_TYPE) {
+                sum->d += car(current)->i;
+            }
+            else if (car(current)->type == DOUBLE_TYPE) {
+                sum->d += car(current)->d;
             }
             else {
                 handleInterpError();
@@ -208,6 +220,7 @@ Value *primitiveAdd(Value *args){
         }
         return sum;
     }
+    return makeNull();
 }
 
 Value *primitiveNull(Value *args) {
@@ -225,6 +238,12 @@ Value *primitiveNull(Value *args) {
     return ret;
 }
 
+//Value *primitiveCdr(Value *args) {
+  //  if (!args || !(args->type == CONS_TYPE) || !(cdr(args)->type == NULL_TYPE)) {
+    //    handleInterpError();
+    //}
+    
+//}
 
 // interprets scheme tree as code
 void interpret(Value *tree) {
