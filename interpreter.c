@@ -245,11 +245,23 @@ Value *primitiveNull(Value *args) {
     
 //}
 
+Value *primitiveCar(Value *args) {
+    if (!args || !(args->type == CONS_TYPE) || car(car(args)) || car(car(args))->type == NULL_TYPE){
+        handleInterpError();
+    }
+//    Value *result = talloc(sizeof(Value));
+//    result = car(car(args));
+//    return result;
+    
+    return car(car(args));
+}
+
 // interprets scheme tree as code
 void interpret(Value *tree) {
     Frame *newFrame = makeFirstFrame();
     bindPrim("+", primitiveAdd, newFrame);
     bindPrim("null?", primitiveNull, newFrame);
+    bindPrim("car", primitiveCar, newFrame);
     
     while (tree->type != NULL_TYPE) {
         Value *val = eval(car(tree), newFrame);
