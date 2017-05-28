@@ -238,13 +238,6 @@ Value *primitiveNull(Value *args) {
     return ret;
 }
 
-//Value *primitiveCdr(Value *args) {
-  //  if (!args || !(args->type == CONS_TYPE) || !(cdr(args)->type == NULL_TYPE)) {
-    //    handleInterpError();
-    //}
-    
-//}
-
 Value *primitiveCar(Value *args) {
     if (!args || !(args->type == CONS_TYPE) || car(car(args)) || car(car(args))->type == NULL_TYPE){
         handleInterpError();
@@ -252,7 +245,6 @@ Value *primitiveCar(Value *args) {
 //    Value *result = talloc(sizeof(Value));
 //    result = car(car(args));
 //    return result;
-    
     return car(car(args));
 }
 
