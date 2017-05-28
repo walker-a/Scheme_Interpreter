@@ -71,14 +71,9 @@ Value *lookUpSymbol(Value *expr, Frame *frame) {
         bindings = frame->bindings;
         while (bindings->type != NULL_TYPE) {
             if (!strcmp(car(car(bindings))->s, expr->s)) {
-                if (car(cdr(bindings))->type == PRIMITIVE_TYPE) {
-                    expr = (car(cdr(bindings))->pf)(cdr(car(bindings)));
-                    return expr;
-                }
-                else {
-                    expr = cdr(car(bindings));
-                    return expr;
-                }
+                
+                expr = cdr(car(bindings));
+                return expr;
             }
             bindings = cdr(bindings);
         }
