@@ -1,15 +1,32 @@
-(define not
-  (lambda (bool)
-    (if bool #f #t)))
-    
-(define testit
-  (lambda (cond conseq alt)
-    (let ((nconseq (not conseq)) (nalt (not alt)))
-      (if cond nconseq nalt))))
-    
-(testit #t #f #t)
-(testit #f #f #t)
+(car (quote (1 2)))
+(cdr (quote (1)))
 
-(let ((x 3)) (let ((x 4)) x))
-(let ((a ())) a)
-((lambda () 1))
+(define lengthz
+  (lambda (L)
+    (if (null? L)
+        0
+        (+ 1 (lengthz (cdr L))))))
+
+(lengthz (quote ()))
+(lengthz (quote (4 5 6)))
+
+
+(define appendz
+  (lambda (L1 L2)
+    (if (null? L1)
+        L2
+        (cons (car L1) (appendz (cdr L1) L2)))))
+
+(appendz (quote (4 5)) (quote (6 7)))
+
+(define reverse-list
+  (lambda (L)
+    (if (null? L)
+        L
+        (appendz (reverse-list (cdr L)) (cons (car L) (quote ()))))))
+        
+(reverse-list (quote ()))
+(reverse-list (quote (1 2 3 4)))
+(cdr (cdr (cdr (cdr (reverse-list (quote (1 2 3 4)))))))
+(reverse-list (quote (("computer" "science") "is" "awesome")))
+(cons (cons 1 2) (quote ()))

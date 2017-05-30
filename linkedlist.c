@@ -156,6 +156,6 @@ int length(Value *value){
     leng++;
     curr = curr->c.cdr;
   }
-  assert(curr->type==NULL_TYPE);
+  //assert(curr->type==NULL_TYPE);
   return leng;
 }
