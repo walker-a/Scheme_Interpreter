@@ -126,7 +126,8 @@ Value *tokenize() {
                 else if (charRead == '+' || charRead == '-') {
                     addCharToStr(newNode->s, charRead);
                     charRead = fgetc(stdin);
-                    if (charRead == ' ') {
+                    //does next if statement work?
+                    if (!isdigit(charRead) && charRead != '.') {
                         newNode->type = SYMBOL_TYPE;
                     }
                     else if (charRead == '.') {

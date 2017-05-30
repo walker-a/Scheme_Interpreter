@@ -40,6 +40,7 @@ Value *makeClosure(Value *params, Value *fxnCode, Frame *fram){
 // only meant to be used once
 Frame *makeFirstFrame() {
     Frame *newFrame = talloc(sizeof(Frame));
+    newFrame->parent = NULL;
     newFrame->bindings = makeNull();
     return newFrame;
 }
@@ -53,7 +54,7 @@ Frame *makeNewFrame(Frame *parent) {
 }
 
 // adds a binding consisting of a symbol and result to the current
-// list of bindings, which is the parameter 'binding'
+// list of bindings, which is the parameter 'bindingList'
 // returns the new list of bindings
 Value *addBinding(Value *symbol, Value *result, Value *bindingList) {
     Value *cell1 = cons(symbol, result);
@@ -71,7 +72,12 @@ Value *lookUpSymbol(Value *expr, Frame *frame) {
         bindings = frame->bindings;
         while (bindings->type != NULL_TYPE) {
             if (!strcmp(car(car(bindings))->s, expr->s)) {
-                
+//                if (cdr(car(bindings))->type != PRIMITIVE_TYPE) {
+//                    expr = cdr(car(bindings));
+//                }
+//                else {
+//                    expr = (cdr(car(bindings))->pf)(cdr(expr));
+//                }
                 expr = cdr(car(bindings));
                 return expr;
             }
@@ -170,6 +176,27 @@ Value *apply(Value *function, Value *args) {
     return eval(function->cl.functionCode, newFrame);
 }
 
+int isPrimitive(Value *symbol, Frame *frame) {
+    assert(symbol); assert(symbol->type == SYMBOL_TYPE);
+    while (frame->parent != NULL) {
+        frame = frame->parent;
+    }
+    Value *bindings = frame->bindings;
+    while (bindings->type != NULL_TYPE) {
+        if (!strcmp(car(car(bindings))->s, symbol->s)) {
+            if (cdr(car(bindings))->type == PRIMITIVE_TYPE) {
+                return 1;
+            }
+            else {
+                return 0;
+            }
+        }
+        bindings = cdr(bindings);
+    }
+    handleInterpError();
+    return -1;    
+}
+
 void bindPrim(char *name, Value *(*function)(struct Value *), Frame *frame) {
     Value *value = talloc(sizeof(Value));
     value->type = PRIMITIVE_TYPE;
@@ -195,7 +222,7 @@ Value *primitiveAdd(Value *args){
         }
     }
     else {
-        Value *current = car(args);
+        Value *current = args;
         Value *sum = makeNull();
         sum->type = DOUBLE_TYPE;
         sum->d = 0.0;
@@ -212,6 +239,7 @@ Value *primitiveAdd(Value *args){
             else {
                 handleInterpError();
             }
+            current = cdr(current);
         }
         return sum;
     }
@@ -224,7 +252,7 @@ Value *primitiveNull(Value *args) {
     }
     Value *ret = talloc(sizeof(Value));
     ret->type = BOOL_TYPE;
-    if (car(args)->type == NULL_TYPE) {
+    if (car(car(args))->type == NULL_TYPE) {
         ret->i = 1;
     }
     else {
@@ -234,12 +262,10 @@ Value *primitiveNull(Value *args) {
 }
 
 Value *primitiveCar(Value *args) {
-    if (!args || !(args->type == CONS_TYPE) || car(car(args)) || car(car(args))->type == NULL_TYPE){
+    // is last case problem?
+    if (!args || !(args->type == CONS_TYPE) || !(car(car(args))) || car(car(args))->type == NULL_TYPE){
         handleInterpError();
     }
-//    Value *result = talloc(sizeof(Value));
-//    result = car(car(args));
-//    return result;
     return car(car(args));
 }
 
@@ -407,6 +433,22 @@ Value *evalEach(Value *expr, Frame *frame) {
     return reverse(args);
 }
 
+Value* evalPrim(Value *symbol, Value *args, Frame *frame) {
+    assert(symbol); assert(symbol->type == SYMBOL_TYPE);
+    while (frame->parent != NULL) {
+        frame = frame->parent;
+    }
+    Value *bindings = frame->bindings;
+    while (bindings->type != NULL_TYPE) {
+        if (!strcmp(car(car(bindings))->s, symbol->s)) {
+            return (cdr(car(bindings))->pf)(evalEach(args, frame));
+        }
+        bindings = cdr(bindings);
+    }
+    handleInterpError();
+    return NULL;   
+}
+
 // evaluates an expression in scheme code
 Value *eval(Value *expr, Frame *frame) {
     Value *result;
@@ -463,9 +505,19 @@ Value *eval(Value *expr, Frame *frame) {
         else if (!strcmp(first->s, "lambda")) {
             result = evalLambda(args, frame);
         }
+        
+        // symbol is a primitive
+        else if (first->type == SYMBOL_TYPE) {
+            int check = isPrimitive(first, frame);
+            //printf("%i\n", check);
+            if (check == 1) {
+                //printf("got here\n");
+                result = evalPrim(first, args, frame);
+            }
+        }
 
         else {
-            // not a recognized special form
+            // not a recognized special form or primitive
             Value *evaledOperator = eval(first, frame);
             Value *evaledArgs = evalEach(args, frame);
             return apply(evaledOperator, evaledArgs);
