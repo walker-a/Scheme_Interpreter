@@ -270,7 +270,7 @@ Value *primitiveCar(Value *args) {
 }
 
 Value *primitiveCdr(Value *args) {
-    if (!args || !(args->type == CONS_TYPE) || !(cdr(car(args))->type == CONS_TYPE){
+    if (!args || !(args->type == CONS_TYPE) || !(cdr(car(args))->type == CONS_TYPE)){
         handleInterpError();
     }
     return cdr(car(args));
