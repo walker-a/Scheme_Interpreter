@@ -1,0 +1,2 @@
+; scheme breaks with this code, so we have decided to as well
+(car (quote ()))

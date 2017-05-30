@@ -78,11 +78,6 @@ Value *tokenize() {
             if (charRead == '#' && canStartNewToken) {
                 newNode->type = BOOL_TYPE;           
                 charRead = fgetc(stdin);
-
-//                if (charRead == 't' || charRead == 'f') {
-//                    addCharToStr(newNode->s, charRead);
-//                    charRead = fgetc(stdin);
-//                }
                 
                 if (charRead == 't'){
                     newNode->i = 1;
@@ -95,17 +90,6 @@ Value *tokenize() {
                 else {
                     handleError(BOOL_TYPE);
                 }
-                
-                // stores t/f values as 0/1 in int i of Value
-//                if (!strcmp(newNode->s, "#t")) {
-//                    newNode->i = 1;
-//                }
-//                else if (!strcmp(newNode->s, "#f")) {
-//                    newNode->i = 0;
-//                }
-//                else {
-//                    handleError(BOOL_TYPE);
-//                }
 
                 canStartNewToken = 0;
             }

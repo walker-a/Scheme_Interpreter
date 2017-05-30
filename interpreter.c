@@ -256,8 +256,14 @@ Value *primitiveNull(Value *args) {
 }
 
 Value *primitiveCar(Value *args) {
-    // is last case problem?
-    if (!args || !(args->type == CONS_TYPE) || !(car(car(args))) || car(car(args))->type == NULL_TYPE) {
+    // are all cases problems?
+    if (!args ||
+        args->type != CONS_TYPE ||
+        !(car(args)) || 
+        car(args)->type != CONS_TYPE ||
+        !(car(car(args))) ||
+        car(car(args))->type == NULL_TYPE) {
+        
         handleInterpError();
     }
     return car(car(args));
