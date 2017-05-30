@@ -243,6 +243,13 @@ Value *primitiveCar(Value *args) {
     return car(car(args));
 }
 
+Value *primitiveCdr(Value *args) {
+    if (!args || !(args->type == CONS_TYPE) || !(cdr(car(args))->type == CONS_TYPE){
+        handleInterpError();
+    }
+    return cdr(car(args));
+}
+
 // interprets scheme tree as code
 void interpret(Value *tree) {
     Frame *newFrame = makeFirstFrame();
