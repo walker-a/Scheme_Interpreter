@@ -72,12 +72,6 @@ Value *lookUpSymbol(Value *expr, Frame *frame) {
         bindings = frame->bindings;
         while (bindings->type != NULL_TYPE) {
             if (!strcmp(car(car(bindings))->s, expr->s)) {
-//                if (cdr(car(bindings))->type != PRIMITIVE_TYPE) {
-//                    expr = cdr(car(bindings));
-//                }
-//                else {
-//                    expr = (cdr(car(bindings))->pf)(cdr(expr));
-//                }
                 expr = cdr(car(bindings));
                 return expr;
             }
@@ -270,8 +264,11 @@ Value *primitiveCar(Value *args) {
 }
 
 Value *primitiveCdr(Value *args) {
-    if (!args || !(args->type == CONS_TYPE) || !(cdr(car(args))->type == CONS_TYPE)){
+    if (!args || !(args->type == CONS_TYPE)){
         handleInterpError();
+    }
+    if (cdr(car(args))->type == NULL_TYPE) { 
+        return cons(makeNull(), makeNull());
     }
     return cdr(car(args));
 }
@@ -282,6 +279,7 @@ void interpret(Value *tree) {
     bindPrim("+", primitiveAdd, newFrame);
     bindPrim("null?", primitiveNull, newFrame);
     bindPrim("car", primitiveCar, newFrame);
+    bindPrim("cdr", primitiveCdr, newFrame);
     
     while (tree->type != NULL_TYPE) {
         Value *val = eval(car(tree), newFrame);
