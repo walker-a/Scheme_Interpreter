@@ -1,7 +1,8 @@
 // by shiny-morning (Adam Klein, Kerim Celik, and Alex Walker)
-// for Programming Languages; 05/17/2017
+// for Programming Languages; 06/05/2017
 
 #include <stdio.h>
+#include <math.h>
 #include <string.h>
 #include <assert.h>
 #include "interpreter.h"
@@ -33,6 +34,20 @@ Value *makeClosure(Value *params, Value *fxnCode, Frame *fram){
     value->cl.functionCode = fxnCode;
     value->cl.frame = fram;
     return value;
+}
+
+Value *makeTrue() {
+    Value *t = makeNull();
+    t->type = BOOL_TYPE;
+    t->i = 1;
+    return t;
+}
+
+Value *makeFalse() {
+    Value *t = makeNull();
+    t->type = BOOL_TYPE;
+    t->i = 0;
+    return t;
 }
 
 // creates the starting frame in the interpret function and initializes
@@ -170,6 +185,7 @@ Value *apply(Value *function, Value *args) {
     return eval(function->cl.functionCode, newFrame);
 }
 
+// checks if a symbol is assigned to a primitive or not
 int isPrimitive(Value *symbol, Frame *frame) {
     assert(symbol); assert(symbol->type == SYMBOL_TYPE);
     while (frame->parent != NULL) {
@@ -191,6 +207,7 @@ int isPrimitive(Value *symbol, Frame *frame) {
     return -1;    
 }
 
+// binds a primitive symbols to its C code
 void bindPrim(char *name, Value *(*function)(struct Value *), Frame *frame) {
     Value *value = talloc(sizeof(Value));
     value->type = PRIMITIVE_TYPE;
@@ -203,12 +220,13 @@ void bindPrim(char *name, Value *(*function)(struct Value *), Frame *frame) {
     frame->bindings = cell2;
 }
 
-//first draft of add
+/*** PRIMITIVE FUNCTION CODE ***/
+
 Value *primitiveAdd(Value *args) {
     if (!(args) || args->type != CONS_TYPE) {
         if (args->type == NULL_TYPE) {
-            args->type = INT_TYPE;
-            args->i = 0;
+            args->type = DOUBLE_TYPE;
+            args->d = 0;
             return args;
         }
         else {
@@ -289,6 +307,313 @@ Value *primitiveCons(Value *args) {
     return cons(c, cd);
 }
 
+Value *primitiveSub(Value *args) {
+    if (!(args) || args->type != CONS_TYPE) {
+        if (args->type == NULL_TYPE) {
+            args->type = DOUBLE_TYPE;
+            args->d = 0.0;
+            return args;
+        }
+        else {
+            handleInterpError();
+        }
+    }
+    else {
+        Value *current = args;
+        Value *sum = makeNull();
+        sum->type = DOUBLE_TYPE;
+        sum->d = 0.0;
+        // if more than one argument
+        if (cdr(current)->type != NULL_TYPE) {
+            if (current->type != CONS_TYPE) {
+                handleInterpError();
+            }
+            if (car(current)->type == INT_TYPE) {
+                sum->d += car(current)->i;
+            }
+            else if (car(current)->type == DOUBLE_TYPE) {
+                sum->d += car(current)->d;
+            }
+            else {
+                handleInterpError();
+            }
+            current = cdr(current);
+        }
+        while (current->type != NULL_TYPE) {
+            if (current->type != CONS_TYPE) {
+                handleInterpError();
+            }
+            if (car(current)->type == INT_TYPE) {
+                sum->d -= car(current)->i;
+            }
+            else if (car(current)->type == DOUBLE_TYPE) {
+                sum->d -= car(current)->d;
+            }
+            else {
+                handleInterpError();
+            }
+            current = cdr(current);
+        }
+        return sum;
+    }
+    return makeNull();
+}
+
+Value *primitiveMult(Value *args) {
+    if (!(args) || args->type != CONS_TYPE) {
+        if (args->type == NULL_TYPE) {
+            args->type = DOUBLE_TYPE;
+            args->d = 1.0;
+            return args;
+        }
+        else {
+            handleInterpError();
+        }
+    }
+    else {
+        Value *current = args;
+        Value *sum = makeNull();
+        sum->type = DOUBLE_TYPE;
+        sum->d = 1.0;
+        while (current->type != NULL_TYPE) {
+            if (current->type != CONS_TYPE) {
+                handleInterpError();
+            }
+            if (car(current)->type == INT_TYPE) {
+                sum->d *= car(current)->i;
+            }
+            else if (car(current)->type == DOUBLE_TYPE) {
+                sum->d *= car(current)->d;
+            }
+            else {
+                handleInterpError();
+            }
+            current = cdr(current);
+        }
+        return sum;
+    }
+    return makeNull();
+}
+
+Value *primitiveDiv(Value *args) {
+    // errors if no arguments passed
+    if (!(args) || args->type != CONS_TYPE) {
+            handleInterpError();
+    }
+    else {
+        Value *current = cdr(args);
+        Value *sum = makeNull();
+        sum->type = DOUBLE_TYPE;
+        if (car(args)->type == INT_TYPE) {
+            sum->d = (double)car(args)->i;
+        }
+        else if (car(args)->type == DOUBLE_TYPE) {
+            sum->d = car(args)->d;
+        }
+        else {
+            handleInterpError();
+        }
+        while (current->type != NULL_TYPE) {
+            if (current->type != CONS_TYPE) {
+                handleInterpError();
+            }
+            if (car(current)->type == INT_TYPE) {
+                sum->d *= 1 / (double)(car(current)->i);
+            }
+            else if (car(current)->type == DOUBLE_TYPE) {
+                sum->d *= 1 / (car(current)->d);
+            }
+            else {
+                handleInterpError();
+            }
+            current = cdr(current);
+        }
+        return sum;
+    }
+    return makeNull();
+}
+
+Value *primitiveMod(Value *args) {
+    if (length(args) != 2) {
+        handleInterpError();
+    }
+    Value *val1 = car(args);
+    Value *val2 = car(cdr(args));
+    int num1;
+    int num2;
+    
+    if (val1 == INT_TYPE) {
+        num1 = val1->i;
+    }
+    else if (val1->type == DOUBLE_TYPE) {
+        if (val1->d - floor(val1->d) == 0) {
+            num1 = val1->d;
+        }
+        else {
+            handleInterpError();
+        }
+    }
+    else {
+        handleInterpError();
+    }
+    
+    if (val2->type == INT_TYPE) {
+        num2 = val2->i;
+    }
+    else if (val2->type == DOUBLE_TYPE) {
+        if (val2->d - floor(val2->d) == 0) {
+            num2 = car(val2)->d;
+        }
+        else {
+            handleInterpError();
+        }
+    }
+    else {
+        handleInterpError();
+    }
+
+    Value *result = makeNull();
+    result->type = INT_TYPE;
+    result->i = num1 % num2;
+    return result;
+}
+
+Value *primitiveLess(Value *args) {
+    if (length(args) < 2) {
+        handleInterpError();
+    }
+    Value *first = car(args);
+    double num1;
+    if (first->type == INT_TYPE) {
+        num1 = first->i;
+    }
+    else if (first->type == DOUBLE_TYPE) {
+        num1 = first->d;
+    }
+    else {
+        handleInterpError();
+    }
+    
+    Value *comps = cdr(args);
+    Value *num;
+    double compNum;
+    int boolean = 1;
+    for (int i = 0; i < length(cdr(args)); i++) {
+        num = car(comps);
+        if (num->type == INT_TYPE) {
+            compNum = num->i;
+        }
+        else if (num->type == DOUBLE_TYPE) {
+            compNum = num->d;
+        }
+        else {
+            handleInterpError();
+        }
+        if (num1 >= compNum) {
+            boolean = 0;
+        }
+        comps = cdr(comps);
+    }
+        
+    if (boolean == 0) {
+        return makeFalse();
+    }
+    else {
+        return makeTrue();
+    }
+}
+
+Value *primitiveGreater(Value *args) {
+    if (length(args) < 2) {
+        handleInterpError();
+    }
+    Value *first = car(args);
+    double num1;
+    if (first->type == INT_TYPE) {
+        num1 = first->i;
+    }
+    else if (first->type == DOUBLE_TYPE) {
+        num1 = first->d;
+    }
+    else {
+        handleInterpError();
+    }
+    
+    Value *comps = cdr(args);
+    Value *num;
+    double compNum;
+    int boolean = 1;
+    for (int i = 0; i < length(cdr(args)); i++) {
+        num = car(comps);
+        if (num->type == INT_TYPE) {
+            compNum = num->i;
+        }
+        else if (num->type == DOUBLE_TYPE) {
+            compNum = num->d;
+        }
+        else {
+            handleInterpError();
+        }
+        if (num1 <= compNum) {
+            boolean = 0;
+        }
+        comps = cdr(comps);
+    }
+        
+    if (boolean == 0) {
+        return makeFalse();
+    }
+    else {
+        return makeTrue();
+    }
+}
+
+Value *primitiveEqual(Value *args) {
+    if (length(args) < 2) {
+        handleInterpError();
+    }
+    Value *first = car(args);
+    double num1;
+    if (first->type == INT_TYPE) {
+        num1 = first->i;
+    }
+    else if (first->type == DOUBLE_TYPE) {
+        num1 = first->d;
+    }
+    else {
+        handleInterpError();
+    }
+    
+    Value *comps = cdr(args);
+    Value *num;
+    double compNum;
+    int boolean = 1;
+    for (int i = 0; i < length(cdr(args)); i++) {
+        num = car(comps);
+        if (num->type == INT_TYPE) {
+            compNum = num->i;
+        }
+        else if (num->type == DOUBLE_TYPE) {
+            compNum = num->d;
+        }
+        else {
+            handleInterpError();
+        }
+        if (num1 != compNum) {
+            boolean = 0;
+        }
+        comps = cdr(comps);
+    }
+        
+    if (boolean == 0) {
+        return makeFalse();
+    }
+    else {
+        return makeTrue();
+    }
+}
+
+/*** EVALUATION CODE ***/
 
 // interprets scheme tree as code
 void interpret(Value *tree) {
@@ -298,6 +623,13 @@ void interpret(Value *tree) {
     bindPrim("car", primitiveCar, newFrame);
     bindPrim("cdr", primitiveCdr, newFrame);
     bindPrim("cons", primitiveCons, newFrame);
+    bindPrim("*", primitiveMult, newFrame);
+    bindPrim("-", primitiveSub, newFrame);
+    bindPrim("/", primitiveDiv, newFrame);
+    bindPrim("modulo", primitiveMod, newFrame);
+    bindPrim("<", primitiveLess, newFrame);
+    bindPrim(">", primitiveGreater, newFrame);
+    bindPrim("=", primitiveEqual, newFrame);
     
     while (tree->type != NULL_TYPE) {
         Value *val = eval(car(tree), newFrame);
