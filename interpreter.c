@@ -612,6 +612,96 @@ Value *primitiveEqual(Value *args) {
     }
 }
 
+Value *primitiveLessEq(Value *args) {
+    if (length(args) < 2) {
+        handleInterpError();
+    }
+    Value *first = car(args);
+    double num1;
+    if (first->type == INT_TYPE) {
+        num1 = first->i;
+    }
+    else if (first->type == DOUBLE_TYPE) {
+        num1 = first->d;
+    }
+    else {
+        handleInterpError();
+    }
+    
+    Value *comps = cdr(args);
+    Value *num;
+    double compNum;
+    int boolean = 1;
+    for (int i = 0; i < length(cdr(args)); i++) {
+        num = car(comps);
+        if (num->type == INT_TYPE) {
+            compNum = num->i;
+        }
+        else if (num->type == DOUBLE_TYPE) {
+            compNum = num->d;
+        }
+        else {
+            handleInterpError();
+        }
+        if (num1 > compNum) {
+            boolean = 0;
+        }
+        comps = cdr(comps);
+    }
+        
+    if (boolean == 0) {
+        return makeFalse();
+    }
+    else {
+        return makeTrue();
+    }
+}
+
+Value *primitiveGrEq(Value *args) {
+    if (length(args) < 2) {
+        handleInterpError();
+    }
+    Value *first = car(args);
+    double num1;
+    if (first->type == INT_TYPE) {
+        num1 = first->i;
+    }
+    else if (first->type == DOUBLE_TYPE) {
+        num1 = first->d;
+    }
+    else {
+        handleInterpError();
+    }
+    
+    Value *comps = cdr(args);
+    Value *num;
+    double compNum;
+    int boolean = 1;
+    for (int i = 0; i < length(cdr(args)); i++) {
+        num = car(comps);
+        if (num->type == INT_TYPE) {
+            compNum = num->i;
+        }
+        else if (num->type == DOUBLE_TYPE) {
+            compNum = num->d;
+        }
+        else {
+            handleInterpError();
+        }
+        if (num1 < compNum) {
+            boolean = 0;
+        }
+        comps = cdr(comps);
+    }
+        
+    if (boolean == 0) {
+        return makeFalse();
+    }
+    else {
+        return makeTrue();
+    }
+}
+
 /*** EVALUATION CODE ***/
 
 // interprets scheme tree as code
@@ -628,6 +718,8 @@ void interpret(Value *tree) {
     bindPrim("modulo", primitiveMod, newFrame);
     bindPrim("<", primitiveLess, newFrame);
     bindPrim(">", primitiveGreater, newFrame);
+    bindPrim("<=", primitiveLessEq, newFrame);
+    bindPrim(">=", primitiveGrEq, newFrame);
     bindPrim("=", primitiveEqual, newFrame);
     
     while (tree->type != NULL_TYPE) {
