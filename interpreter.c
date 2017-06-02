@@ -203,8 +203,7 @@ int isPrimitive(Value *symbol, Frame *frame) {
         }
         bindings = cdr(bindings);
     }
-    handleInterpError();
-    return -1;    
+    return 0;
 }
 
 // binds a primitive symbols to its C code
@@ -683,10 +682,10 @@ int inFrame(Value *symbol, Frame *frame) {
     return 0;
 }
 
-// evaluates a let expression in scheme code
-Value *evalLet(Value *expr, Frame *frame) {
+Value *evalLetrec(Value *expr, Frame *frame) {
+    
     if (expr == NULL || expr->type != CONS_TYPE ||
-        car(expr)->type != CONS_TYPE || cdr(cdr(expr))->type != NULL_TYPE) {
+        car(expr)->type != CONS_TYPE || cdr(expr)->type == NULL_TYPE) {
         handleInterpError();
     }
     
@@ -719,12 +718,82 @@ Value *evalLet(Value *expr, Frame *frame) {
             handleInterpError();
         }
 
-        Value *result = eval(car(cdr(assign)), frame);
-        newFrame->bindings = addBinding(symbol, result, newFrame->bindings);
+        
+        Value *newBind = car(cdr(assign));
+        newFrame->bindings = addBinding(symbol, newBind, newFrame->bindings);
         assignList = cdr(assignList);
     }
+    assignList = newFrame->bindings;
+    while (assignList->type != NULL_TYPE) {
+        assignList->c.car = cons(car(car(assignList)),   
+                                 eval(cdr(car(assignList)), newFrame));
+        assignList = cdr(assignList);
+    }
+    
+    Value *result;
+    Value *cur = (cdr(expr));
+    while (cur->type != NULL_TYPE){
+        result = eval(car(cur), newFrame);
+        cur = cdr(cur);
+    }
+    return result;
+}
 
-    return eval(car(cdr(expr)), newFrame);
+//evaluates a let expression in scheme code
+Value *evalLet(Value *expr, Frame *frame, int star) {
+    if (expr == NULL || expr->type != CONS_TYPE ||
+        car(expr)->type != CONS_TYPE || cdr(expr)->type == NULL_TYPE) {
+        handleInterpError();
+    }
+    
+    Frame *newFrame = makeNewFrame(frame);
+    
+    Value *assignList = car(expr);
+    while (assignList->type != NULL_TYPE) {
+        // error checking for assignList
+        if (assignList->type != CONS_TYPE) {
+            handleInterpError();
+        }
+        Value *assign = car(assignList); 
+        
+        // error checking for assign
+        if (assign->type != CONS_TYPE) {
+            handleInterpError();
+        }
+        else if (cdr(assign)->type != CONS_TYPE) {
+            handleInterpError();
+        }
+        else if (cdr(cdr(assign))->type != NULL_TYPE) {
+            handleInterpError();
+        }
+        else if (car(assign)->type != SYMBOL_TYPE) {
+            handleInterpError();
+        }
+        
+        Value *symbol = car(assign);
+        if (inFrame(symbol, newFrame)) {
+            handleInterpError();
+        }
+
+        Value *newBind;
+        //difference between let and let* is if it evals in frame or newFrame
+        if (star) {
+            newBind = eval(car(cdr(assign)), newFrame);
+        }
+        else {
+            newBind = eval(car(cdr(assign)), frame);
+        }
+        newFrame->bindings = addBinding(symbol, newBind, newFrame->bindings);
+        assignList = cdr(assignList);
+    }
+    Value *result;
+    Value *cur = (cdr(expr));
+    while (cur->type != NULL_TYPE){
+        result = eval(car(cur), newFrame);
+        cur = cdr(cur);
+    }
+    return result;
+    //return eval(car(cdr(expr)), newFrame);
 }
 
 // evaluates a quote expression in scheme code
@@ -829,7 +898,9 @@ Value *evalEach(Value *expr, Frame *frame) {
 }
 
 Value* evalPrim(Value *symbol, Value *args, Frame *frame) {
-    assert(symbol); assert(symbol->type == SYMBOL_TYPE);
+    if (!symbol || symbol->type != SYMBOL_TYPE) {
+        handleInterpError();
+    }
     Frame *tempFrame = frame;
     while (tempFrame->parent != NULL) {
         tempFrame = tempFrame->parent;
@@ -843,6 +914,89 @@ Value* evalPrim(Value *symbol, Value *args, Frame *frame) {
     }
     handleInterpError();
     return NULL;   
+}
+
+Value *evalAnd(Value *args, Frame *frame) {
+    Value *ret;
+    if (!args) {
+        handleInterpError();
+    }
+    // case: 0 args
+    if (length(args) == 0) {
+        ret = makeNull();
+        ret->type = BOOL_TYPE;
+        ret->i = 1;
+        return ret;
+    }
+    Value *temp = args;
+    for (int i = 0; i < length(args); i++) {
+        if (car(temp)->type == BOOL_TYPE && car(temp)->i == 0) {
+            return car(temp);
+        }
+        if (i == (length(args) - 1)) {
+            ret = car(temp);
+        }
+        temp = cdr(temp);
+    }
+    return eval(ret, frame);
+}
+
+Value *evalOr(Value *args, Frame *frame) {
+    Value *ret;
+    if (!args) {
+        handleInterpError();
+    }
+    // case: 0 args
+    if (length(args) == 0) {
+        ret = makeNull();
+        ret->type = BOOL_TYPE;
+        ret->i = 0;
+        return ret;
+    }
+    Value *temp = args;
+    for (int i = 0; i < length(args); i++) {
+        if (car(temp)->type != BOOL_TYPE) {
+            ret = car(temp);
+            return eval(ret, frame);
+        }
+        else if (car(temp)->i == 1) {
+            return car(temp);
+        }
+        ret = car(temp);
+        temp = cdr(temp);
+    }
+    return ret;
+}
+
+Value *evalCond(Value *args, Frame *frame) {
+    if (!args) {
+        handleInterpError();
+    }
+    if (length(args) == 0) {
+        return makeVoid();
+    }
+    Value *current = args;
+    while (current->type != NULL_TYPE) {
+        if (!car(current) || length(car(current)) != 2){
+            handleInterpError();
+        }
+        if (car(car(current))->type == SYMBOL_TYPE) {
+            if (!strcmp(car(car(current))->s, "else")) {
+                return eval(car(cdr(car(current))), frame);
+            }
+        }
+        Value *check = eval(car(car(current)), frame);
+        if (check->type != BOOL_TYPE) {
+            return eval(car(cdr(car(current))), frame);
+        }
+        if (check->type == BOOL_TYPE) {
+            if (check->i == 1) {
+                return eval(car(cdr(car(current))), frame);
+            }
+        }
+        current = cdr(current);
+    }
+    return makeVoid();
 }
 
 // evaluates an expression in scheme code
@@ -887,7 +1041,15 @@ Value *eval(Value *expr, Frame *frame) {
         }
         
         else if (!strcmp(first->s, "let")) {
-            result = evalLet(args, frame);
+            result = evalLet(args, frame, 0);
+            //result = evalLet(args, frame, 0);
+        }
+        else if (!strcmp(first->s, "let*")) {
+            result = evalLet(args, frame, 1);
+            //result = evalLet(args, frame, 1);
+        }
+        else if (!strcmp(first->s, "letrec")) {
+            result = evalLetrec(args, frame);
         }
         
         else if (!strcmp(first->s, "quote")) {
@@ -900,6 +1062,16 @@ Value *eval(Value *expr, Frame *frame) {
         
         else if (!strcmp(first->s, "lambda")) {
             result = evalLambda(args, frame);
+        }
+        else if (!strcmp(first->s, "and")) {
+            result = evalAnd(args, frame);
+        }
+        
+        else if (!strcmp(first->s, "or")) {
+            result = evalOr(args, frame);
+        }
+        else if (!strcmp(first->s, "cond")) {
+            result = evalCond(args, frame);
         }
          
         else if (!strcmp(first->s, "set!")) {
