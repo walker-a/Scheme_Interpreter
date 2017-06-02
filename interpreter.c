@@ -351,10 +351,13 @@ int inFrame(Value *symbol, Frame *frame) {
     return 0;
 }
 
+
+
 // evaluates a let expression in scheme code
-Value *evalLet(Value *expr, Frame *frame) {
+Value *evalLet(Value *expr, Frame *frame, int star) {
+    
     if (expr == NULL || expr->type != CONS_TYPE ||
-        car(expr)->type != CONS_TYPE || cdr(cdr(expr))->type != NULL_TYPE) {
+        car(expr)->type != CONS_TYPE) {
         handleInterpError();
     }
     
@@ -384,15 +387,29 @@ Value *evalLet(Value *expr, Frame *frame) {
         
         Value *symbol = car(assign);
         if (inFrame(symbol, newFrame)) {
+            printf("5\n");
             handleInterpError();
         }
 
-        Value *result = eval(car(cdr(assign)), frame);
-        newFrame->bindings = addBinding(symbol, result, newFrame->bindings);
+        Value *newBind;
+        //difference between let and let* is if it evals in frame or newFrame
+        if (star) {
+            newBind = eval(car(cdr(assign)), newFrame);
+        }
+        else {
+            newBind = eval(car(cdr(assign)), frame);
+        }
+        newFrame->bindings = addBinding(symbol, newBind, newFrame->bindings);
         assignList = cdr(assignList);
     }
-
-    return eval(car(cdr(expr)), newFrame);
+    Value *result;
+    Value *cur = (cdr(expr));
+    while (cur->type != NULL_TYPE){
+        result = eval(car(cur), newFrame);
+        cur = cdr(cur);
+    }
+    return result;
+    //return eval(car(cdr(expr)), newFrame);
 }
 
 // evaluates a quote expression in scheme code
@@ -518,7 +535,10 @@ Value *eval(Value *expr, Frame *frame) {
         }
         
         else if (!strcmp(first->s, "let")) {
-            result = evalLet(args, frame);
+            result = evalLet(args, frame, 0);
+        }
+        else if (!strcmp(first->s, "let*")) {
+            result = evalLet(args, frame, 1);
         }
         
         else if (!strcmp(first->s, "quote")) {
