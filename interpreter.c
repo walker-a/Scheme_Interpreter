@@ -493,6 +493,43 @@ Value *evalDefine(Value *expr, Frame *frame) {
     return makeVoid();
 }
 
+Value *evalSetBang(Value *expr, Frame *frame) {
+    if (length(expr) != 2) {
+        handleInterpError();
+    }  
+    if (car(expr) == NULL || car(cdr(expr)) == NULL) {
+        handleInterpError();
+    }
+    
+    Value *result = eval(car(cdr(expr)), frame);
+    Value *var = car(expr);
+    
+    Frame *tempFrame = frame;
+    while (tempFrame != NULL) {
+        Value *temp = tempFrame->bindings;
+        while (temp->type == CONS_TYPE) {
+            if (!strcmp(car(car(temp))->s, var->s)) {
+                car(temp)->c.cdr = result;
+                return makeVoid();
+            }
+            temp = cdr(temp);
+        }
+        tempFrame = tempFrame->parent;
+    }
+    handleInterpError();
+    return makeVoid();
+}
+
+Value *evalBegin(Value *expr, Frame *frame) {
+    Value *result = makeVoid();
+    Value *temp = expr;
+    for (int i = 0; i < length(expr); i++) {
+        result = eval(car(temp), frame);
+        temp = cdr(temp);
+    }
+    return result;
+}
+
 Value *evalLambda(Value *expr, Frame *frame) {
     if (length(expr) != 2) {
         handleInterpError();
@@ -529,7 +566,9 @@ Value *evalEach(Value *expr, Frame *frame) {
 }
 
 Value* evalPrim(Value *symbol, Value *args, Frame *frame) {
-    assert(symbol); assert(symbol->type == SYMBOL_TYPE);
+    if (!symbol || symbol->type != SYMBOL_TYPE) {
+        handleInterpError();
+    }
     Frame *tempFrame = frame;
     while (tempFrame->parent != NULL) {
         tempFrame = tempFrame->parent;
@@ -543,6 +582,89 @@ Value* evalPrim(Value *symbol, Value *args, Frame *frame) {
     }
     handleInterpError();
     return NULL;   
+}
+
+Value *evalAnd(Value *args, Frame *frame) {
+    Value *ret;
+    if (!args) {
+        handleInterpError();
+    }
+    // case: 0 args
+    if (length(args) == 0) {
+        ret = makeNull();
+        ret->type = BOOL_TYPE;
+        ret->i = 1;
+        return ret;
+    }
+    Value *temp = args;
+    for (int i = 0; i < length(args); i++) {
+        if (car(temp)->type == BOOL_TYPE && car(temp)->i == 0) {
+            return car(temp);
+        }
+        if (i == (length(args) - 1)) {
+            ret = car(temp);
+        }
+        temp = cdr(temp);
+    }
+    return eval(ret, frame);
+}
+
+Value *evalOr(Value *args, Frame *frame) {
+    Value *ret;
+    if (!args) {
+        handleInterpError();
+    }
+    // case: 0 args
+    if (length(args) == 0) {
+        ret = makeNull();
+        ret->type = BOOL_TYPE;
+        ret->i = 0;
+        return ret;
+    }
+    Value *temp = args;
+    for (int i = 0; i < length(args); i++) {
+        if (car(temp)->type != BOOL_TYPE) {
+            ret = car(temp);
+            return eval(ret, frame);
+        }
+        else if (car(temp)->i == 1) {
+            return car(temp);
+        }
+        ret = car(temp);
+        temp = cdr(temp);
+    }
+    return ret;
+}
+
+Value *evalCond(Value *args, Frame *frame) {
+    if (!args) {
+        handleInterpError();
+    }
+    if (length(args) == 0) {
+        return makeVoid();
+    }
+    Value *current = args;
+    while (current->type != NULL_TYPE) {
+        if (!car(current) || length(car(current)) != 2){
+            handleInterpError();
+        }
+        if (car(car(current))->type == SYMBOL_TYPE) {
+            if (!strcmp(car(car(current))->s, "else")) {
+                return eval(car(cdr(car(current))), frame);
+            }
+        }
+        Value *check = eval(car(car(current)), frame);
+        if (check->type != BOOL_TYPE) {
+            return eval(car(cdr(car(current))), frame);
+        }
+        if (check->type == BOOL_TYPE) {
+            if (check->i == 1) {
+                return eval(car(cdr(car(current))), frame);
+            }
+        }
+        current = cdr(current);
+    }
+    return makeVoid();
 }
 
 // evaluates an expression in scheme code
@@ -608,6 +730,24 @@ Value *eval(Value *expr, Frame *frame) {
         
         else if (!strcmp(first->s, "lambda")) {
             result = evalLambda(args, frame);
+        }
+        else if (!strcmp(first->s, "and")) {
+            result = evalAnd(args, frame);
+        }
+        
+        else if (!strcmp(first->s, "or")) {
+            result = evalOr(args, frame);
+        }
+        else if (!strcmp(first->s, "cond")) {
+            result = evalCond(args, frame);
+        }
+         
+        else if (!strcmp(first->s, "set!")) {
+            result = evalSetBang(args, frame);
+        }
+         
+        else if (!strcmp(first->s, "begin")) {
+            result = evalBegin(args, frame);
         }
          
         // symbol is a primitive
