@@ -659,7 +659,7 @@ Value *primitiveLessEq(Value *args) {
 
 Value *primitiveGrEq(Value *args) {
     if (length(args) < 2) {
-        handleInterpError();
+        handleInterpError(145);
     }
     Value *first = car(args);
     double num1;
@@ -670,7 +670,7 @@ Value *primitiveGrEq(Value *args) {
         num1 = first->d;
     }
     else {
-        handleInterpError();
+        handleInterpError(146);
     }
     
     Value *comps = cdr(args);
@@ -686,7 +686,7 @@ Value *primitiveGrEq(Value *args) {
             compNum = num->d;
         }
         else {
-            handleInterpError();
+            handleInterpError(147);
         }
         if (num1 < compNum) {
             boolean = 0;
@@ -737,22 +737,22 @@ Value *evalIf(Value *expr, Frame *frame) {
     Value *tExpr;
     Value *fExpr;
     if (expr->type != CONS_TYPE) {
-        handleInterpError();
+        handleInterpError(148);
     }
     if (cdr(expr)->type == CONS_TYPE) {
         tExpr = car(cdr(expr));
         if (cdr(cdr(expr))->type == CONS_TYPE) {
             if(cdr(cdr(cdr(expr)))->type != NULL_TYPE) {
-                handleInterpError();
+                handleInterpError(149);
             }
             fExpr = car(cdr(cdr(expr)));
         }
         else {
-            handleInterpError();
+            handleInterpError(150);
         }
     }
     else {
-        handleInterpError();
+        handleInterpError(151);
     }
     Value *check = eval(car(expr), frame);
     if (check->i) {
@@ -778,7 +778,7 @@ Value *evalLetrec(Value *expr, Frame *frame) {
     
     if (expr == NULL || expr->type != CONS_TYPE ||
         car(expr)->type != CONS_TYPE || cdr(expr)->type == NULL_TYPE) {
-        handleInterpError();
+        handleInterpError(152);
     }
     
     Frame *newFrame = makeNewFrame(frame);
@@ -787,27 +787,27 @@ Value *evalLetrec(Value *expr, Frame *frame) {
     while (assignList->type != NULL_TYPE) {
         // error checking for assignList
         if (assignList->type != CONS_TYPE) {
-            handleInterpError();
+            handleInterpError(153);
         }
         Value *assign = car(assignList); 
         
         // error checking for assign
         if (assign->type != CONS_TYPE) {
-            handleInterpError();
+            handleInterpError(154);
         }
         else if (cdr(assign)->type != CONS_TYPE) {
-            handleInterpError();
+            handleInterpError(155);
         }
         else if (cdr(cdr(assign))->type != NULL_TYPE) {
-            handleInterpError();
+            handleInterpError(156);
         }
         else if (car(assign)->type != SYMBOL_TYPE) {
-            handleInterpError();
+            handleInterpError(157);
         }
         
         Value *symbol = car(assign);
         if (inFrame(symbol, newFrame)) {
-            handleInterpError();
+            handleInterpError(158);
         }
 
         
@@ -835,7 +835,7 @@ Value *evalLetrec(Value *expr, Frame *frame) {
 Value *evalLet(Value *expr, Frame *frame, int star) {
     if (expr == NULL || expr->type != CONS_TYPE ||
         car(expr)->type != CONS_TYPE || cdr(expr)->type == NULL_TYPE) {
-        handleInterpError();
+        handleInterpError(159);
     }
     
     Frame *newFrame = makeNewFrame(frame);
@@ -844,27 +844,27 @@ Value *evalLet(Value *expr, Frame *frame, int star) {
     while (assignList->type != NULL_TYPE) {
         // error checking for assignList
         if (assignList->type != CONS_TYPE) {
-            handleInterpError();
+            handleInterpError(160);
         }
         Value *assign = car(assignList); 
         
         // error checking for assign
         if (assign->type != CONS_TYPE) {
-            handleInterpError();
+            handleInterpError(161);
         }
         else if (cdr(assign)->type != CONS_TYPE) {
-            handleInterpError();
+            handleInterpError(162);
         }
         else if (cdr(cdr(assign))->type != NULL_TYPE) {
-            handleInterpError();
+            handleInterpError(163);
         }
         else if (car(assign)->type != SYMBOL_TYPE) {
-            handleInterpError();
+            handleInterpError(164);
         }
         
         Value *symbol = car(assign);
         if (inFrame(symbol, newFrame)) {
-            handleInterpError();
+            handleInterpError(165);
         }
 
         Value *newBind;
@@ -892,7 +892,7 @@ Value *evalLet(Value *expr, Frame *frame, int star) {
 Value *evalQuote(Value *expr, Frame *frame) {
     if (expr->type != CONS_TYPE || car(expr) == NULL || cdr(expr) == NULL
         || cdr(expr)->type != NULL_TYPE) {
-        handleInterpError();
+        handleInterpError(166);
     }
     if (car(expr)->type == CONS_TYPE && car(car(expr))->type == NULL_TYPE) {
         return car(car(expr));
@@ -902,13 +902,13 @@ Value *evalQuote(Value *expr, Frame *frame) {
 
 Value *evalDefine(Value *expr, Frame *frame) {
     if (length(expr) != 2) {
-        handleInterpError();
+        handleInterpError(167);
     }
     if (car(expr) == NULL || car(cdr(expr)) == NULL) {
-        handleInterpError();
+        handleInterpError(168);
     }
     if (car(expr)->type != SYMBOL_TYPE) {
-        handleInterpError();
+        handleInterpError(169);
     }
     
     Value *result = eval(car(cdr(expr)), frame);
@@ -919,10 +919,10 @@ Value *evalDefine(Value *expr, Frame *frame) {
 
 Value *evalSetBang(Value *expr, Frame *frame) {
     if (length(expr) != 2) {
-        handleInterpError();
+        handleInterpError(170);
     }  
     if (car(expr) == NULL || car(cdr(expr)) == NULL) {
-        handleInterpError();
+        handleInterpError(171);
     }
     
     Value *result = eval(car(cdr(expr)), frame);
@@ -940,7 +940,7 @@ Value *evalSetBang(Value *expr, Frame *frame) {
         }
         tempFrame = tempFrame->parent;
     }
-    handleInterpError();
+    handleInterpError(172);
     return makeVoid();
 }
 
@@ -956,7 +956,7 @@ Value *evalBegin(Value *expr, Frame *frame) {
 
 Value *evalLambda(Value *expr, Frame *frame) {
     if (length(expr) != 2) {
-        handleInterpError();
+        handleInterpError(173);
     }
     Value *current = car(expr);
     if (current->type == CONS_TYPE && car(current)->type == NULL_TYPE) {
@@ -964,7 +964,7 @@ Value *evalLambda(Value *expr, Frame *frame) {
     }
     while (current->type != NULL_TYPE) {
         if (car(current)->type != SYMBOL_TYPE) {
-            handleInterpError();
+            handleInterpError(174);
         }
         current = cdr(current);
     }
@@ -977,7 +977,7 @@ Value *evalEach(Value *expr, Frame *frame) {
         return expr;
     }
     if (expr->type != CONS_TYPE) {
-        handleInterpError();
+        handleInterpError(175);
     }
     Value *args = makeNull();
     Value *cur = expr;
@@ -991,7 +991,7 @@ Value *evalEach(Value *expr, Frame *frame) {
 
 Value* evalPrim(Value *symbol, Value *args, Frame *frame) {
     if (!symbol || symbol->type != SYMBOL_TYPE) {
-        handleInterpError();
+        handleInterpError(176);
     }
     Frame *tempFrame = frame;
     while (tempFrame->parent != NULL) {
@@ -1004,14 +1004,14 @@ Value* evalPrim(Value *symbol, Value *args, Frame *frame) {
         }
         bindings = cdr(bindings);
     }
-    handleInterpError();
+    handleInterpError(177);
     return NULL;   
 }
 
 Value *evalAnd(Value *args, Frame *frame) {
     Value *ret;
     if (!args) {
-        handleInterpError();
+        handleInterpError(178);
     }
     // case: 0 args
     if (length(args) == 0) {
@@ -1038,7 +1038,7 @@ Value *evalAnd(Value *args, Frame *frame) {
 Value *evalOr(Value *args, Frame *frame) {
     Value *ret;
     if (!args) {
-        handleInterpError();
+        handleInterpError(179);
     }
     // case: 0 args
     if (length(args) == 0) {
@@ -1066,7 +1066,7 @@ Value *evalOr(Value *args, Frame *frame) {
 
 Value *evalCond(Value *args, Frame *frame) {
     if (!args) {
-        handleInterpError();
+        handleInterpError(180);
     }
     if (length(args) == 0) {
         return makeVoid();
@@ -1074,12 +1074,12 @@ Value *evalCond(Value *args, Frame *frame) {
     Value *current = args;
     while (current->type != NULL_TYPE) {
         if (!car(current) || length(car(current)) == 0){
-            handleInterpError();
+            handleInterpError(181);
         }
         if (length(car(current)) == 1) {
             if (car(car(current))->type == SYMBOL_TYPE) {
                 if (!strcmp(car(car(current))->s, "else")) {
-                    handleInterpError();
+                    handleInterpError(182);
                 }
             }
             Value *check = eval(car(car(current)), frame);
@@ -1158,7 +1158,7 @@ Value *eval(Value *expr, Frame *frame) {
         }
          
         else if (first->type != SYMBOL_TYPE && first->type != CONS_TYPE) {
-            handleInterpError();
+            handleInterpError(182);
         }
         
         // Sanity and error checking on first...
@@ -1233,7 +1233,7 @@ Value *eval(Value *expr, Frame *frame) {
      }
      default: {
         // otherwise throw an error
-        handleInterpError();
+        handleInterpError(183);
      }    
     }
     return result;
