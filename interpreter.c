@@ -929,9 +929,11 @@ Value *evalAnd(Value *args, Frame *frame) {
         return ret;
     }
     Value *temp = args;
+    Value *arg;
     for (int i = 0; i < length(args); i++) {
-        if (car(temp)->type == BOOL_TYPE && car(temp)->i == 0) {
-            return car(temp);
+        arg = eval(car(temp), frame);
+        if (arg->type == BOOL_TYPE && arg->i == 0) {
+            return arg;
         }
         if (i == (length(args) - 1)) {
             ret = car(temp);
@@ -954,18 +956,20 @@ Value *evalOr(Value *args, Frame *frame) {
         return ret;
     }
     Value *temp = args;
+    Value *arg;
     for (int i = 0; i < length(args); i++) {
-        if (car(temp)->type != BOOL_TYPE) {
-            ret = car(temp);
-            return eval(ret, frame);
+        arg = eval(car(temp), frame);
+        if (arg->type != BOOL_TYPE) {
+            ret = arg;
+            return arg;
         }
-        else if (car(temp)->i == 1) {
-            return car(temp);
+        else if (arg->i == 1) {
+            return arg;
         }
         ret = car(temp);
         temp = cdr(temp);
     }
-    return ret;
+    return eval(ret, frame);
 }
 
 Value *evalCond(Value *args, Frame *frame) {
@@ -1063,6 +1067,7 @@ Value *eval(Value *expr, Frame *frame) {
         else if (!strcmp(first->s, "lambda")) {
             result = evalLambda(args, frame);
         }
+         
         else if (!strcmp(first->s, "and")) {
             result = evalAnd(args, frame);
         }
