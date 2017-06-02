@@ -13,8 +13,8 @@
 #include "parser.h"
 
 // prints error message and exits
-void handleInterpError() {
-    printf("An error occurred during interpretation.\n");
+void handleInterpError(int i) {
+    printf("An error occurred during interpretation at: %i\n", i);
     texit(0);
 }
 
