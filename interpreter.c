@@ -28,7 +28,7 @@ Value *makeClosure(Value *params, Value *fxnCode, Frame *fram){
     Value *value = makeNull();
     value->type = CLOSURE_TYPE;
     if (!(params) || !(fxnCode) || !(fram)){
-        handleInterpError();
+        handleInterpError(1);
     }
     value->cl.paramNames = params;
     value->cl.functionCode = fxnCode;
@@ -94,7 +94,7 @@ Value *lookUpSymbol(Value *expr, Frame *frame) {
         }
         frame = frame->parent;
     }
-    handleInterpError(); //couldnt find symbol
+    handleInterpError(2); //couldnt find symbol
     return NULL;
 }
 
@@ -157,14 +157,14 @@ void printVal(Value *val) {
      }
      default: {
         //otherwise throw an error
-        handleInterpError();
+        handleInterpError(3);
      }
     }
 }
 
 Value *apply(Value *function, Value *args) {
     if (!(function) || function->type != CLOSURE_TYPE) {
-        handleInterpError();
+        handleInterpError(4);
     }
     Frame *newFrame = makeNewFrame(function->cl.frame);
     Value *curr = function->cl.paramNames;
@@ -176,11 +176,11 @@ Value *apply(Value *function, Value *args) {
             curr2 = cdr(curr2);
         }
         if (length(curr) != length(curr2)) {
-            handleInterpError();
+            handleInterpError(5);
         }
     }
     else if (length(args) != 0) {
-        handleInterpError();
+        handleInterpError(6);
     }
     return eval(function->cl.functionCode, newFrame);
 }
@@ -229,7 +229,7 @@ Value *primitiveAdd(Value *args) {
             return args;
         }
         else {
-            handleInterpError();
+            handleInterpError(7);
         }
     }
     else {
@@ -239,7 +239,7 @@ Value *primitiveAdd(Value *args) {
         sum->d = 0.0;
         while (current->type != NULL_TYPE) {
             if (current->type != CONS_TYPE) {
-                handleInterpError();
+                handleInterpError(8);
             }
             if (car(current)->type == INT_TYPE) {
                 sum->d += car(current)->i;
@@ -248,7 +248,7 @@ Value *primitiveAdd(Value *args) {
                 sum->d += car(current)->d;
             }
             else {
-                handleInterpError();
+                handleInterpError(9);
             }
             current = cdr(current);
         }
@@ -259,7 +259,7 @@ Value *primitiveAdd(Value *args) {
 
 Value *primitiveNull(Value *args) {
     if (!args || !(args->type == CONS_TYPE) || !(cdr(args)->type == NULL_TYPE)) {
-        handleInterpError();
+        handleInterpError(10);
     }
     Value *ret = talloc(sizeof(Value));
     ret->type = BOOL_TYPE;
@@ -281,14 +281,14 @@ Value *primitiveCar(Value *args) {
         !(car(car(args))) ||
         car(car(args))->type == NULL_TYPE) {
         
-        handleInterpError();
+        handleInterpError(11);
     }
     return car(car(args));
 }
 
 Value *primitiveCdr(Value *args) {
     if (!args || !(args->type == CONS_TYPE)) {
-        handleInterpError();
+        handleInterpError(12);
     }
     Value *temp = cdr(car(args));
     return cdr(car(args));
@@ -296,10 +296,10 @@ Value *primitiveCdr(Value *args) {
 
 Value *primitiveCons(Value *args) {
     if (!args || !(args->type == CONS_TYPE)) {
-        handleInterpError();
+        handleInterpError(13);
     }
     if (length(args) != 2) {
-        handleInterpError();
+        handleInterpError(14);
     }
     Value *c = car(args);
     Value *cd = car(cdr(args));
@@ -314,7 +314,7 @@ Value *primitiveSub(Value *args) {
             return args;
         }
         else {
-            handleInterpError();
+            handleInterpError(15);
         }
     }
     else {
@@ -325,7 +325,7 @@ Value *primitiveSub(Value *args) {
         // if more than one argument
         if (cdr(current)->type != NULL_TYPE) {
             if (current->type != CONS_TYPE) {
-                handleInterpError();
+                handleInterpError(16);
             }
             if (car(current)->type == INT_TYPE) {
                 sum->d += car(current)->i;
@@ -334,13 +334,13 @@ Value *primitiveSub(Value *args) {
                 sum->d += car(current)->d;
             }
             else {
-                handleInterpError();
+                handleInterpError(17);
             }
             current = cdr(current);
         }
         while (current->type != NULL_TYPE) {
             if (current->type != CONS_TYPE) {
-                handleInterpError();
+                handleInterpError(18);
             }
             if (car(current)->type == INT_TYPE) {
                 sum->d -= car(current)->i;
@@ -349,7 +349,7 @@ Value *primitiveSub(Value *args) {
                 sum->d -= car(current)->d;
             }
             else {
-                handleInterpError();
+                handleInterpError(19);
             }
             current = cdr(current);
         }
@@ -366,7 +366,7 @@ Value *primitiveMult(Value *args) {
             return args;
         }
         else {
-            handleInterpError();
+            handleInterpError(20);
         }
     }
     else {
@@ -376,7 +376,7 @@ Value *primitiveMult(Value *args) {
         sum->d = 1.0;
         while (current->type != NULL_TYPE) {
             if (current->type != CONS_TYPE) {
-                handleInterpError();
+                handleInterpError(21);
             }
             if (car(current)->type == INT_TYPE) {
                 sum->d *= car(current)->i;
@@ -385,7 +385,7 @@ Value *primitiveMult(Value *args) {
                 sum->d *= car(current)->d;
             }
             else {
-                handleInterpError();
+                handleInterpError(22);
             }
             current = cdr(current);
         }
@@ -397,7 +397,7 @@ Value *primitiveMult(Value *args) {
 Value *primitiveDiv(Value *args) {
     // errors if no arguments passed
     if (!(args) || args->type != CONS_TYPE) {
-            handleInterpError();
+            handleInterpError(23);
     }
     else {
         Value *current = cdr(args);
@@ -410,11 +410,11 @@ Value *primitiveDiv(Value *args) {
             sum->d = car(args)->d;
         }
         else {
-            handleInterpError();
+            handleInterpError(24);
         }
         while (current->type != NULL_TYPE) {
             if (current->type != CONS_TYPE) {
-                handleInterpError();
+                handleInterpError(24);
             }
             if (car(current)->type == INT_TYPE) {
                 sum->d *= 1 / (double)(car(current)->i);
@@ -423,7 +423,7 @@ Value *primitiveDiv(Value *args) {
                 sum->d *= 1 / (car(current)->d);
             }
             else {
-                handleInterpError();
+                handleInterpError(25);
             }
             current = cdr(current);
         }
@@ -434,7 +434,7 @@ Value *primitiveDiv(Value *args) {
 
 Value *primitiveMod(Value *args) {
     if (length(args) != 2) {
-        handleInterpError();
+        handleInterpError(26);
     }
     Value *val1 = car(args);
     Value *val2 = car(cdr(args));
@@ -449,11 +449,11 @@ Value *primitiveMod(Value *args) {
             num1 = val1->d;
         }
         else {
-            handleInterpError();
+            handleInterpError(27);
         }
     }
     else {
-        handleInterpError();
+        handleInterpError(28);
     }
     
     if (val2->type == INT_TYPE) {
@@ -464,11 +464,11 @@ Value *primitiveMod(Value *args) {
             num2 = car(val2)->d;
         }
         else {
-            handleInterpError();
+            handleInterpError(29);
         }
     }
     else {
-        handleInterpError();
+        handleInterpError(30);
     }
 
     Value *result = makeNull();
@@ -479,7 +479,7 @@ Value *primitiveMod(Value *args) {
 
 Value *primitiveLess(Value *args) {
     if (length(args) < 2) {
-        handleInterpError();
+        handleInterpError(31);
     }
     Value *first = car(args);
     double num1;
@@ -490,7 +490,7 @@ Value *primitiveLess(Value *args) {
         num1 = first->d;
     }
     else {
-        handleInterpError();
+        handleInterpError(32);
     }
     
     Value *comps = cdr(args);
@@ -506,7 +506,7 @@ Value *primitiveLess(Value *args) {
             compNum = num->d;
         }
         else {
-            handleInterpError();
+            handleInterpError(33);
         }
         if (num1 >= compNum) {
             boolean = 0;
@@ -524,7 +524,7 @@ Value *primitiveLess(Value *args) {
 
 Value *primitiveGreater(Value *args) {
     if (length(args) < 2) {
-        handleInterpError();
+        handleInterpError(34);
     }
     Value *first = car(args);
     double num1;
@@ -535,7 +535,7 @@ Value *primitiveGreater(Value *args) {
         num1 = first->d;
     }
     else {
-        handleInterpError();
+        handleInterpError(35);
     }
     
     Value *comps = cdr(args);
@@ -551,7 +551,7 @@ Value *primitiveGreater(Value *args) {
             compNum = num->d;
         }
         else {
-            handleInterpError();
+            handleInterpError(36);
         }
         if (num1 <= compNum) {
             boolean = 0;
@@ -569,7 +569,7 @@ Value *primitiveGreater(Value *args) {
 
 Value *primitiveEqual(Value *args) {
     if (length(args) < 2) {
-        handleInterpError();
+        handleInterpError(37);
     }
     Value *first = car(args);
     double num1;
@@ -580,7 +580,7 @@ Value *primitiveEqual(Value *args) {
         num1 = first->d;
     }
     else {
-        handleInterpError();
+        handleInterpError(38);
     }
     
     Value *comps = cdr(args);
@@ -596,7 +596,7 @@ Value *primitiveEqual(Value *args) {
             compNum = num->d;
         }
         else {
-            handleInterpError();
+            handleInterpError(39);
         }
         if (num1 != compNum) {
             boolean = 0;
@@ -614,7 +614,7 @@ Value *primitiveEqual(Value *args) {
 
 Value *primitiveLessEq(Value *args) {
     if (length(args) < 2) {
-        handleInterpError();
+        handleInterpError(40);
     }
     Value *first = car(args);
     double num1;
@@ -625,7 +625,7 @@ Value *primitiveLessEq(Value *args) {
         num1 = first->d;
     }
     else {
-        handleInterpError();
+        handleInterpError(41);
     }
     
     Value *comps = cdr(args);
@@ -641,7 +641,7 @@ Value *primitiveLessEq(Value *args) {
             compNum = num->d;
         }
         else {
-            handleInterpError();
+            handleInterpError(42);
         }
         if (num1 > compNum) {
             boolean = 0;
@@ -659,7 +659,7 @@ Value *primitiveLessEq(Value *args) {
 
 Value *primitiveGrEq(Value *args) {
     if (length(args) < 2) {
-        handleInterpError(145);
+        handleInterpError(43);
     }
     Value *first = car(args);
     double num1;
@@ -670,7 +670,7 @@ Value *primitiveGrEq(Value *args) {
         num1 = first->d;
     }
     else {
-        handleInterpError(146);
+        handleInterpError(44);
     }
     
     Value *comps = cdr(args);
@@ -686,7 +686,7 @@ Value *primitiveGrEq(Value *args) {
             compNum = num->d;
         }
         else {
-            handleInterpError(147);
+            handleInterpError(45);
         }
         if (num1 < compNum) {
             boolean = 0;
