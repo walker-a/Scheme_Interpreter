@@ -424,6 +424,43 @@ Value *evalDefine(Value *expr, Frame *frame) {
     return makeVoid();
 }
 
+Value *evalSetBang(Value *expr, Frame *frame) {
+    if (length(expr) != 2) {
+        handleInterpError();
+    }  
+    if (car(expr) == NULL || car(cdr(expr)) == NULL) {
+        handleInterpError();
+    }
+    
+    Value *result = eval(car(cdr(expr)), frame);
+    Value *var = car(expr);
+    
+    Frame *tempFrame = frame;
+    while (tempFrame != NULL) {
+        Value *temp = tempFrame->bindings;
+        while (temp->type == CONS_TYPE) {
+            if (!strcmp(car(car(temp))->s, var->s)) {
+                car(temp)->c.cdr = result;
+                return makeVoid();
+            }
+            temp = cdr(temp);
+        }
+        tempFrame = tempFrame->parent;
+    }
+    handleInterpError();
+    return makeVoid();
+}
+
+Value *evalBegin(Value *expr, Frame *frame) {
+    Value *result = makeVoid();
+    Value *temp = expr;
+    for (int i = 0; i < length(expr); i++) {
+        result = eval(car(temp), frame);
+        temp = cdr(temp);
+    }
+    return result;
+}
+
 Value *evalLambda(Value *expr, Frame *frame) {
     if (length(expr) != 2) {
         handleInterpError();
@@ -626,6 +663,14 @@ Value *eval(Value *expr, Frame *frame) {
         }
         else if (!strcmp(first->s, "cond")) {
             result = evalCond(args, frame);
+        }
+         
+        else if (!strcmp(first->s, "set!")) {
+            result = evalSetBang(args, frame);
+        }
+         
+        else if (!strcmp(first->s, "begin")) {
+            result = evalBegin(args, frame);
         }
          
         // symbol is a primitive
