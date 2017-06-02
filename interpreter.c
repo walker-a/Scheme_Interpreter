@@ -576,21 +576,51 @@ Value *evalCond(Value *args, Frame *frame) {
     }
     Value *current = args;
     while (current->type != NULL_TYPE) {
-        if (!car(current) || length(car(current)) != 2){
+        if (!car(current) || length(car(current)) == 0){
             handleInterpError();
         }
-        if (car(car(current))->type == SYMBOL_TYPE) {
-            if (!strcmp(car(car(current))->s, "else")) {
-                return eval(car(cdr(car(current))), frame);
+        if (length(car(current)) == 1) {
+            if (car(car(current))->type == SYMBOL_TYPE) {
+                if (!strcmp(car(car(current))->s, "else")) {
+                    handleInterpError();
+                }
+            }
+            Value *check = eval(car(car(current)), frame);
+            if (check->type != BOOL_TYPE) {
+                return eval(car(car(current)), frame);
+            }
+            if (check->type == BOOL_TYPE) {
+                if (check->i == 1) {
+                    return eval(car(car(current)), frame);
+                }
             }
         }
-        Value *check = eval(car(car(current)), frame);
-        if (check->type != BOOL_TYPE) {
-            return eval(car(cdr(car(current))), frame);
-        }
-        if (check->type == BOOL_TYPE) {
-            if (check->i == 1) {
-                return eval(car(cdr(car(current))), frame);
+        else {
+            if (car(car(current))->type == SYMBOL_TYPE) {
+                if (!strcmp(car(car(current))->s, "else")) {
+                    Value *ret = cdr(car(current));
+                    while (cdr(ret)->type != NULL_TYPE) {
+                        ret = cdr(ret);
+                    }
+                    return eval(car(ret), frame);
+                }
+            }
+            Value *check = eval(car(car(current)), frame);
+            if (check->type != BOOL_TYPE) {
+                Value *ret = cdr(car(current));
+                    while (cdr(ret)->type != NULL_TYPE) {
+                        ret = cdr(ret);
+                    }
+                    return eval(car(ret), frame);
+            }
+            if (check->type == BOOL_TYPE) {
+                if (check->i == 1) {
+                    Value *ret = cdr(car(current));
+                    while (cdr(ret)->type != NULL_TYPE) {
+                        ret = cdr(ret);
+                    }
+                    return eval(car(ret), frame);
+                }
             }
         }
         current = cdr(current);
