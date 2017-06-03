@@ -73,9 +73,20 @@ Value *tokenize() {
             for (int i = 0; i < 999; i++) {
                 newNode->s[i] = '\0';
             }
+            
+            // accounts for ' case
+            char readString[2];
+            readString[0] = charRead;
+            readString[1] = '\0';
+            if (!strcmp(readString, "'")) {
+                canStartNewToken = 1;
+                newNode->type = QUOTE_TYPE;
+                addCharToStr(newNode->s, charRead);
+                charRead = fgetc(stdin);
+            }
         
             // accounts for boolean case
-            if (charRead == '#' && canStartNewToken) {
+            else if (charRead == '#' && canStartNewToken) {
                 newNode->type = BOOL_TYPE;           
                 charRead = fgetc(stdin);
                 
@@ -273,6 +284,10 @@ void displayTokens(Value *list) {
         else if (car(list)->type == SYMBOL_TYPE) {
             printf("%s", car(list)->s);
             printf(":symbol\n");
+        }
+        else if (car(list)->type == QUOTE_TYPE) {
+            printf("%s", car(list)->s);
+            printf(":quote\n");
         }
         else {
             handleError(-1);

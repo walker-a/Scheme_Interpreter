@@ -65,6 +65,44 @@ Value *pop(Value *stack) {
     return popped;
 }
 
+Value *makeQuote() {
+    Value *quote = makeNull();
+    quote->type = SYMBOL_TYPE;
+    quote->s = "quote";
+    return quote;
+}
+
+Value *findQuotes(Value *tree) {
+    Value *tempTree = tree;
+    while (tree->type == CONS_TYPE) {
+        if (car(tree)->type == QUOTE_TYPE) {
+            Value *quoteList = makeNull();
+            Value *quoteToken = makeQuote();
+            Value *quoted;
+            if (cdr(tree)->type == CONS_TYPE) {
+                quoted = car(cdr(tree));
+            }
+            else {
+                handleParseError(0);
+            }
+            if (quoted->type == CONS_TYPE) {
+                quoted = findQuotes(quoted);
+            }
+            quoteList = push(quoteList, quoted);
+            quoteList = push(quoteList, quoteToken);
+            tree->c.car = quoteList;
+            tree->c.cdr = cdr(cdr(tree));
+        }
+        
+        else if (car(tree)->type == CONS_TYPE) {
+            tree->c.car = findQuotes(car(tree));
+        }
+        tree = cdr(tree);
+    }
+    
+    return tempTree;
+}
+
 // Takes a list of tokens from a Racket program, and returns a pointer to a
 // parse tree representing that program.
 Value *parse(Value *tokens) {
@@ -81,6 +119,7 @@ Value *parse(Value *tokens) {
     
     while (tokens->type == CONS_TYPE) {
         curToken = car(tokens);
+        
         if (curToken->type == OPEN_TYPE) {
             depth++;
         }
@@ -117,7 +156,7 @@ Value *parse(Value *tokens) {
     while (!empty(stack)) {
         finalParseTree = push(finalParseTree, pop(stack));
     }
-    
+    finalParseTree = findQuotes(finalParseTree);
     return finalParseTree;
 }
 
@@ -151,6 +190,9 @@ void displayValue(Value *value) {
         }
     }
     else if (value->type == SYMBOL_TYPE) {
+        printf("%s", value->s);
+    }
+    else if (value->type == QUOTE_TYPE) {
         printf("%s", value->s);
     }
     else if (value->type == NULL_TYPE) {

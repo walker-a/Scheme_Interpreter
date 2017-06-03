@@ -9,8 +9,9 @@
 int main() {
 
     Value *list = tokenize(stdin);
+    //displayTokens(list);
     Value *tree = parse(list);
-//    printTree(tree);
+    //printTree(tree);
     interpret(tree);
     tfree();
     return 0;

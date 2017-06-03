@@ -77,27 +77,6 @@ Value *addBinding(Value *symbol, Value *result, Value *bindingList) {
     return cell2;
 }
 
-// looks up a symbol in the frame bindings and returns the value
-// associated with that symbol
-Value *lookUpSymbol(Value *expr, Frame *frame) {
-    assert(expr->type == SYMBOL_TYPE);
-    assert(frame);
-    Value *bindings;
-    while(frame != NULL) {
-        bindings = frame->bindings;
-        while (bindings->type != NULL_TYPE) {
-            if (!strcmp(car(car(bindings))->s, expr->s)) {
-                expr = cdr(car(bindings));
-                return expr;
-            }
-            bindings = cdr(bindings);
-        }
-        frame = frame->parent;
-    }
-    handleInterpError(2); //couldnt find symbol
-    return NULL;
-}
-
 // prints a value, provided that it is an int, double, boolean, string,
 // or symbol
 void printVal(Value *val) {
@@ -160,6 +139,29 @@ void printVal(Value *val) {
         handleInterpError(3);
      }
     }
+}
+
+// looks up a symbol in the frame bindings and returns the value
+// associated with that symbol
+Value *lookUpSymbol(Value *expr, Frame *frame) {
+    assert(expr->type == SYMBOL_TYPE);
+    assert(frame);
+    Value *bindings;
+    while(frame != NULL) {
+        bindings = frame->bindings;
+        while (bindings->type != NULL_TYPE) {
+            if (!strcmp(car(car(bindings))->s, expr->s)) {
+                expr = cdr(car(bindings));
+                return expr;
+            }
+            bindings = cdr(bindings);
+        }
+        frame = frame->parent;
+    }
+    printVal(expr);
+    printf("\n");
+    handleInterpError(2); //couldnt find symbol
+    return NULL;
 }
 
 // checks if a symbol is assigned to a primitive or not

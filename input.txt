@@ -1,15 +1,2 @@
-(let ((x (lambda () 2))) (+ (x) (x)))
 
-((lambda () 1 2 3))
-
-(define A
-  (lambda (k x1 x2 x3 x4 x5)
-    (letrec ((B
-           (lambda ()
-             (set! k (- k 1))
-             (A k B x1 x2 x3 x4))))
-      (if (<= k 0)
-          (+ (x4) (x5))
-          (B)))))
-
-(A 10 (lambda () 1) (lambda () -1) (lambda () -1) (lambda () 1) (lambda () 0))
+'(a b '(c d e))
