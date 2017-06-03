@@ -1,3 +1,7 @@
+(let ((x (lambda () 2))) (+ (x) (x)))
+
+((lambda () 1 2 3))
+
 (define A
   (lambda (k x1 x2 x3 x4 x5)
     (letrec ((B

@@ -162,29 +162,6 @@ void printVal(Value *val) {
     }
 }
 
-Value *apply(Value *function, Value *args) {
-    if (!(function) || function->type != CLOSURE_TYPE) {
-        handleInterpError(4);
-    }
-    Frame *newFrame = makeNewFrame(function->cl.frame);
-    Value *curr = function->cl.paramNames;
-    if (car(curr)->type != NULL_TYPE) {
-        Value *curr2 = args;
-        while (curr->type != NULL_TYPE && curr2->type != NULL_TYPE) {
-            newFrame->bindings = addBinding(car(curr), car(curr2), newFrame->bindings);
-            curr = cdr(curr); 
-            curr2 = cdr(curr2);
-        }
-        if (length(curr) != length(curr2)) {
-            handleInterpError(5);
-        }
-    }
-    else if (length(args) != 0) {
-        handleInterpError(6);
-    }
-    return eval(function->cl.functionCode, newFrame);
-}
-
 // checks if a symbol is assigned to a primitive or not
 int isPrimitive(Value *symbol, Frame *frame) {
     assert(symbol); assert(symbol->type == SYMBOL_TYPE);
@@ -955,9 +932,6 @@ Value *evalBegin(Value *expr, Frame *frame) {
 }
 
 Value *evalLambda(Value *expr, Frame *frame) {
-    if (length(expr) != 2) {
-        handleInterpError(173);
-    }
     Value *current = car(expr);
     if (current->type == CONS_TYPE && car(current)->type == NULL_TYPE) {
         current = cdr(current);
@@ -968,44 +942,8 @@ Value *evalLambda(Value *expr, Frame *frame) {
         }
         current = cdr(current);
     }
-    Value *closure = makeClosure(car(expr), car(cdr(expr)), frame);
+    Value *closure = makeClosure(car(expr), cdr(expr), frame);
     return closure;
-}
-
-Value *evalEach(Value *expr, Frame *frame) {
-    if (expr->type == NULL_TYPE) {
-        return expr;
-    }
-    if (expr->type != CONS_TYPE) {
-        handleInterpError(175);
-    }
-    Value *args = makeNull();
-    Value *cur = expr;
-    while (cur->type != NULL_TYPE) {
-        args = cons(eval(car(cur), frame), args);
-        cur = cdr(cur);
-    }
-    
-    return reverse(args);
-}
-
-Value* evalPrim(Value *symbol, Value *args, Frame *frame) {
-    if (!symbol || symbol->type != SYMBOL_TYPE) {
-        handleInterpError(176);
-    }
-    Frame *tempFrame = frame;
-    while (tempFrame->parent != NULL) {
-        tempFrame = tempFrame->parent;
-    }
-    Value *bindings = tempFrame->bindings;
-    while (bindings->type != NULL_TYPE) {
-        if (!strcmp(car(car(bindings))->s, symbol->s)) {
-            return (cdr(car(bindings))->pf)(evalEach(args, frame));
-        }
-        bindings = cdr(bindings);
-    }
-    handleInterpError(177);
-    return NULL;   
 }
 
 Value *evalAnd(Value *args, Frame *frame) {
@@ -1123,6 +1061,73 @@ Value *evalCond(Value *args, Frame *frame) {
         current = cdr(current);
     }
     return makeVoid();
+}
+
+Value *evalEach(Value *expr, Frame *frame) {
+    if (expr->type == NULL_TYPE) {
+        return expr;
+    }
+    if (expr->type != CONS_TYPE) {
+        handleInterpError(175);
+    }
+    Value *args = makeNull();
+    Value *cur = expr;
+    while (cur->type != NULL_TYPE) {
+        args = cons(eval(car(cur), frame), args);
+        cur = cdr(cur);
+    }
+    
+    return reverse(args);
+}
+
+Value* evalPrim(Value *symbol, Value *args, Frame *frame) {
+    if (!symbol || symbol->type != SYMBOL_TYPE) {
+        handleInterpError(176);
+    }
+    Frame *tempFrame = frame;
+    while (tempFrame->parent != NULL) {
+        tempFrame = tempFrame->parent;
+    }
+    Value *bindings = tempFrame->bindings;
+    while (bindings->type != NULL_TYPE) {
+        if (!strcmp(car(car(bindings))->s, symbol->s)) {
+            return (cdr(car(bindings))->pf)(evalEach(args, frame));
+        }
+        bindings = cdr(bindings);
+    }
+    handleInterpError(177);
+    return NULL;   
+}
+
+Value *apply(Value *function, Value *args) {
+    if (!(function) || function->type != CLOSURE_TYPE) {
+        handleInterpError(4);
+    }
+    Frame *newFrame = makeNewFrame(function->cl.frame);
+    Value *curr = function->cl.paramNames;
+    if (car(curr)->type != NULL_TYPE) {
+        Value *curr2 = args;
+        while (curr->type != NULL_TYPE && curr2->type != NULL_TYPE) {
+            newFrame->bindings = addBinding(car(curr), car(curr2), newFrame->bindings);
+            curr = cdr(curr); 
+            curr2 = cdr(curr2);
+        }
+        if (length(curr) != length(curr2)) {
+            handleInterpError(5);
+        }
+    }
+    else if (length(args) != 0) {
+        handleInterpError(6);
+    }
+    
+    // this assumes that the functionCode will be a list of bodies
+    Value *evaled = function->cl.functionCode;
+    Value *bodies = function->cl.functionCode;
+    for (int i = 0; i < length(function->cl.functionCode); i++) {
+        evaled = eval(car(bodies), newFrame);
+        bodies = cdr(bodies);
+    }
+    return evaled;
 }
 
 // evaluates an expression in scheme code
