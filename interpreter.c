@@ -439,7 +439,7 @@ Value *primitiveMod(Value *args) {
         num2 = val2->i;
     }
     else if (val2->type == DOUBLE_TYPE) {
-        if (val2->d - floor(val2->d) == 0) {
+        if (val2->d - (int)(val2->d) == 0) {
             num2 = car(val2)->d;
         }
         else {
