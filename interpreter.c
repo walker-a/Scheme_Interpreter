@@ -424,7 +424,7 @@ Value *primitiveMod(Value *args) {
         num1 = val1->i;
     }
     else if (val1->type == DOUBLE_TYPE) {
-        if (val1->d - floor(val1->d) == 0) {
+        if (val1->d - (int)(val1->d) == 0) {
             num1 = val1->d;
         }
         else {
