@@ -18,12 +18,14 @@ void handleInterpError(int i) {
     texit(0);
 }
 
+// returns a new VOID_TYPE value struct
 Value *makeVoid() {
     Value *value = makeNull();
     value->type = VOID_TYPE;
     return value;
 }
 
+// returns a new CLOSURE_TYPE value struct with passed attributes
 Value *makeClosure(Value *params, Value *fxnCode, Frame *fram){
     Value *value = makeNull();
     value->type = CLOSURE_TYPE;
@@ -36,6 +38,7 @@ Value *makeClosure(Value *params, Value *fxnCode, Frame *fram){
     return value;
 }
 
+// returns a new, true BOOL_TYPE value struct
 Value *makeTrue() {
     Value *t = makeNull();
     t->type = BOOL_TYPE;
@@ -43,6 +46,7 @@ Value *makeTrue() {
     return t;
 }
 
+// returns a new, false BOOL_TYPE value struct
 Value *makeFalse() {
     Value *t = makeNull();
     t->type = BOOL_TYPE;
@@ -199,6 +203,8 @@ void bindPrim(char *name, Value *(*function)(struct Value *), Frame *frame) {
 }
 
 /*** PRIMITIVE FUNCTION CODE ***/
+// these functions are bound to primitives at the beginning of interpret
+// to allow access to them at all stages of scheme code interpretation
 
 Value *primitiveAdd(Value *args) {
     if (!(args) || args->type != CONS_TYPE) {
@@ -420,7 +426,7 @@ Value *primitiveMod(Value *args) {
     int num1;
     int num2;
     
-    if (val1 == INT_TYPE) {
+    if (val1->type == INT_TYPE) {
         num1 = val1->i;
     }
     else if (val1->type == DOUBLE_TYPE) {
@@ -440,7 +446,7 @@ Value *primitiveMod(Value *args) {
     }
     else if (val2->type == DOUBLE_TYPE) {
         if (val2->d - (int)(val2->d) == 0) {
-            num2 = car(val2)->d;
+            num2 = val2->d;
         }
         else {
             handleInterpError(29);
@@ -682,6 +688,10 @@ Value *primitiveGrEq(Value *args) {
 }
 
 /*** EVALUATION CODE ***/
+/* code for evaluation of scheme code,
+ * both generally and for special forms;
+ * also includes helper functions for evaluation methods
+ */
 
 // interprets scheme tree as code
 void interpret(Value *tree) {
@@ -711,7 +721,6 @@ void interpret(Value *tree) {
     }
 }
 
-// evaluates an if statement based on the arguments 'expr'
 Value *evalIf(Value *expr, Frame *frame) {
     Value *tExpr;
     Value *fExpr;
@@ -810,7 +819,6 @@ Value *evalLetrec(Value *expr, Frame *frame) {
     return result;
 }
 
-//evaluates a let expression in scheme code
 Value *evalLet(Value *expr, Frame *frame, int star) {
     if (expr == NULL || expr->type != CONS_TYPE ||
         car(expr)->type != CONS_TYPE || cdr(expr)->type == NULL_TYPE) {
@@ -864,10 +872,8 @@ Value *evalLet(Value *expr, Frame *frame, int star) {
         cur = cdr(cur);
     }
     return result;
-    //return eval(car(cdr(expr)), newFrame);
 }
 
-// evaluates a quote expression in scheme code
 Value *evalQuote(Value *expr, Frame *frame) {
     if (expr->type != CONS_TYPE || car(expr) == NULL || cdr(expr) == NULL
         || cdr(expr)->type != NULL_TYPE) {
@@ -1132,7 +1138,6 @@ Value *apply(Value *function, Value *args) {
     return evaled;
 }
 
-// evaluates an expression in scheme code
 Value *eval(Value *expr, Frame *frame) {
     Value *result;
     switch (expr->type) {
