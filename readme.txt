@@ -7,3 +7,6 @@ Test 41 pertains to other primitive arithmetic functions.
 Test 42 pertains to primitive functions and special forms that evaluate to booleans.
 Test 43 is Knuth's test.
 Test 44 pertains to additional cond functionality.
+
+Additional functionality:
+Added the ability to use single    quote ' instead of (quote ____)
